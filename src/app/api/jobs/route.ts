@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase, isUsingFileStore } from "@/lib/db";
 import { formatDatabaseError } from "@/lib/db/errors";
-import { resolveDatabaseUrl } from "@/lib/db/resolve-database-url";
+import {
+  getDatabaseEnvStatus,
+  getPostgresSetupHint,
+  resolveDatabaseUrl,
+} from "@/lib/db/resolve-database-url";
 import type { JobFilters, RoleFocus, WorkMode } from "@/types";
 
 export async function GET(request: NextRequest) {
@@ -48,9 +52,9 @@ export async function GET(request: NextRequest) {
           : isUsingFileStore()
             ? "file"
             : "memory",
-      warning: usingMemoryOnVercel
-        ? "No Vercel Postgres connected. Storage → Create Postgres → Connect to this project → run db/migrations/001_initial_schema.sql in Query tab → Redeploy → Refresh jobs."
-        : undefined,
+      warning: usingMemoryOnVercel ? "no_postgres" : undefined,
+      hint: usingMemoryOnVercel ? getPostgresSetupHint() : undefined,
+      env: usingMemoryOnVercel ? getDatabaseEnvStatus() : undefined,
     });
   } catch (error) {
     console.error("GET /api/jobs error:", error);

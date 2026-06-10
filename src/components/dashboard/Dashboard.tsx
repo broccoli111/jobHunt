@@ -7,6 +7,7 @@ import {
   type FilterState,
 } from "@/components/dashboard/JobFilters";
 import { JobTable } from "@/components/dashboard/JobTable";
+import { PostgresSetupBanner } from "@/components/dashboard/PostgresSetupBanner";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -39,6 +40,8 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [setupHint, setSetupHint] = useState<string | null>(null);
+  const [storage, setStorage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +60,8 @@ export function Dashboard() {
           setJobs(data.jobs ?? []);
           setLastRefreshed(data.lastRefreshedAt ?? null);
           setWarning(data.warning ?? null);
+          setSetupHint(data.hint ?? null);
+          setStorage(data.storage ?? null);
         }
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : "Unknown error");
@@ -105,6 +110,8 @@ export function Dashboard() {
       setJobs(data.jobs ?? []);
       setLastRefreshed(data.lastRefreshedAt ?? null);
       setWarning(data.warning ?? null);
+      setSetupHint(data.hint ?? null);
+      setStorage(data.storage ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -159,10 +166,8 @@ export function Dashboard() {
       <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
         <JobFilters filters={filters} companies={companies} onChange={setFilters} />
 
-        {warning && !error && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {warning}
-          </div>
+        {storage === "memory" && !error && (
+          <PostgresSetupBanner hint={setupHint ?? warning ?? undefined} />
         )}
 
         {loading && <LoadingState />}
