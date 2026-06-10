@@ -34,8 +34,11 @@ A Vercel-deployable web dashboard that finds, normalizes, deduplicates, scores, 
 
 ### 3. Run database migration
 
-1. Storage → your Postgres database → **Query** tab
-2. Copy/paste all of `db/migrations/001_initial_schema.sql` → **Run**
+**Option A (easiest):** Open your deployed site → click **Run database migration** in the yellow setup banner. This uses `POSTGRES_URL` on Vercel — no copy/paste needed.
+
+**Option B:** Storage → Postgres → **Query** tab → paste `db/migrations/001_initial_schema.sql` → Run
+
+**Option C:** Locally after `vercel env pull`: `pnpm db:migrate`
 
 ### 4. Environment variables
 

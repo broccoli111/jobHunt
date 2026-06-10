@@ -167,7 +167,10 @@ export function Dashboard() {
         <JobFilters filters={filters} companies={companies} onChange={setFilters} />
 
         {storage === "memory" && !error && (
-          <PostgresSetupBanner hint={setupHint ?? warning ?? undefined} />
+          <PostgresSetupBanner
+            hint={setupHint ?? warning ?? undefined}
+            onMigrated={reloadJobs}
+          />
         )}
 
         {loading && <LoadingState />}
