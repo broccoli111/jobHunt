@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
             ? "file"
             : "memory",
       warning: usingMemoryOnVercel
-        ? "No DATABASE_URL configured. Data is in-memory only — click Refresh jobs, then add Postgres for persistence."
+        ? "No Postgres connected. Jobs will not persist across deploys. In Vercel: Storage → Create Postgres → Connect to this project → run the migration SQL → Redeploy → Refresh jobs."
         : undefined,
     });
   } catch (error) {

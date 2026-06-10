@@ -49,7 +49,20 @@ cp .env.example .env.local
 | `REFRESH_API_KEY` | Optional | Manual refresh header (`x-refresh-key`) |
 | `FINNHUB_API_KEY` | Optional | Alternative stock price provider |
 
-**Without `DATABASE_URL`**, the app uses a local file store (`.data/store.json`) for development.
+**Without `DATABASE_URL`**, local dev uses `.data/store.json`. On **Vercel**, data is in-memory only until Postgres is connected (you will see a yellow warning banner).
+
+### Connect Postgres on Vercel (recommended)
+
+1. Open your Vercel project → **Storage** tab → **Create Database** → **Postgres**
+2. Name it (e.g. `job-hunt-db`) and **Connect** it to your project
+3. Vercel auto-adds `POSTGRES_URL` (this app reads it automatically — no need to rename to `DATABASE_URL`)
+4. Run the schema migration on that database:
+   - **Option A:** Vercel Storage → your database → **Query** tab → paste contents of `supabase/migrations/001_initial_schema.sql` → Run
+   - **Option B:** Locally: `psql $POSTGRES_URL -f supabase/migrations/001_initial_schema.sql`
+5. **Redeploy** the project (Deployments → ⋯ → Redeploy)
+6. Open the site → click **Refresh jobs**
+
+Also set `CRON_SECRET` under **Settings → Environment Variables** for daily cron refresh.
 
 ### 3. Run database migrations
 
