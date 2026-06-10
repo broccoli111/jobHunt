@@ -1,3 +1,4 @@
+import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig, RawJobPosting } from "@/types";
 
@@ -16,10 +17,7 @@ interface LeverPosting {
 }
 
 function isDesignRole(posting: LeverPosting): boolean {
-  const text = `${posting.text} ${posting.categories.team ?? ""}`.toLowerCase();
-  return ["design", "ux", "product design", "designer", "design system"].some((k) =>
-    text.includes(k),
-  );
+  return isDesignJobTitle(posting.text, posting.categories.team ?? "");
 }
 
 export async function fetchLeverJobs(

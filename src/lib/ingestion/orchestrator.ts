@@ -4,6 +4,9 @@ import { enrichPostingSalary } from "@/lib/ingestion/enrich-posting";
 import { fetchAshbyJobs } from "@/lib/ingestion/adapters/ashby";
 import { fetchGreenhouseJobs } from "@/lib/ingestion/adapters/greenhouse";
 import { fetchLeverJobs } from "@/lib/ingestion/adapters/lever";
+import { fetchArbeitnowDesignJobs } from "@/lib/ingestion/adapters/arbeitnow";
+import { fetchJobicyDesignJobs } from "@/lib/ingestion/adapters/jobicy";
+import { fetchRemoteOkDesignJobs } from "@/lib/ingestion/adapters/remoteok";
 import { fetchRemotiveDesignJobs } from "@/lib/ingestion/adapters/remotive";
 import { fetchWorkdayJobs } from "@/lib/ingestion/adapters/workday";
 import { extractTextSections } from "@/lib/normalization/text";
@@ -100,11 +103,19 @@ export async function runIngestion(): Promise<IngestionResult> {
     allPostings.push(...jobs);
   }
 
-  try {
-    const remotive = await fetchRemotiveDesignJobs();
-    allPostings.push(...remotive);
-  } catch (e) {
-    errors.push(`Remotive: ${e instanceof Error ? e.message : String(e)}`);
+  const jobBoardFetchers: Array<{ name: string; fetch: () => Promise<RawJobPosting[]> }> = [
+    { name: "Remotive", fetch: fetchRemotiveDesignJobs },
+    { name: "Jobicy", fetch: fetchJobicyDesignJobs },
+    { name: "Arbeitnow", fetch: fetchArbeitnowDesignJobs },
+    { name: "Remote OK", fetch: fetchRemoteOkDesignJobs },
+  ];
+
+  for (const { name, fetch } of jobBoardFetchers) {
+    try {
+      allPostings.push(...(await fetch()));
+    } catch (e) {
+      errors.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   const enrichedPostings = allPostings.map(enrichPostingSalary);

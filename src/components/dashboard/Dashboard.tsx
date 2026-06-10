@@ -43,6 +43,7 @@ export function Dashboard() {
   const [warning, setWarning] = useState<string | null>(null);
   const [setupHint, setSetupHint] = useState<string | null>(null);
   const [storage, setStorage] = useState<string | null>(null);
+  const [totalInDatabase, setTotalInDatabase] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -59,6 +60,7 @@ export function Dashboard() {
         }
         if (active) {
           setJobs(data.jobs ?? []);
+          setTotalInDatabase(data.totalInDatabase ?? null);
           setLastRefreshed(data.lastRefreshedAt ?? null);
           setWarning(data.warning ?? null);
           setSetupHint(data.hint ?? null);
@@ -183,6 +185,9 @@ export function Dashboard() {
           <>
             <p className="text-sm text-slate-500">
               Showing {jobs.length} job{jobs.length !== 1 ? "s" : ""} sorted by match %
+              {totalInDatabase != null && totalInDatabase > jobs.length
+                ? ` (${totalInDatabase} total in database — clear filters to see more)`
+                : ""}
             </p>
             <div className="md:hidden">
               <JobCardList jobs={jobs} onSelect={setSelectedJob} />

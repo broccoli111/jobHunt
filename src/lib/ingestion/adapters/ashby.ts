@@ -1,3 +1,4 @@
+import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig, RawJobPosting } from "@/types";
 
@@ -14,10 +15,7 @@ interface AshbyJob {
 }
 
 function isDesignRole(job: AshbyJob): boolean {
-  const text = `${job.title} ${job.department ?? ""} ${job.team ?? ""}`.toLowerCase();
-  return ["design", "ux", "product design", "designer", "design system"].some((k) =>
-    text.includes(k),
-  );
+  return isDesignJobTitle(job.title, `${job.department ?? ""} ${job.team ?? ""}`);
 }
 
 export async function fetchAshbyJobs(

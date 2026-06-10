@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const db = getDatabase();
     const lastRefreshed = await db.getMetadata("last_refreshed_at");
 
-    const jobs = (await db.getJobs({
+    const filterInput = {
       roleFocus,
       workMode,
       seniority,
@@ -38,13 +38,21 @@ export async function GET(request: NextRequest) {
       minMatch,
       sortBy,
       sortOrder,
-    })).map(sanitizeJobForResponse);
+    };
+
+    const [jobs, totalInDatabase] = await Promise.all([
+      db.getJobs(filterInput),
+      db.getJobs({ sortBy, sortOrder }),
+    ]);
+
+    const sanitizedJobs = jobs.map(sanitizeJobForResponse);
 
     const usingMemoryOnVercel = process.env.VERCEL && !resolveDatabaseUrl();
 
     return NextResponse.json({
-      jobs,
-      count: jobs.length,
+      jobs: sanitizedJobs,
+      count: sanitizedJobs.length,
+      totalInDatabase: totalInDatabase.length,
       lastRefreshedAt: lastRefreshed,
       storage: usingMemoryOnVercel
         ? "memory"

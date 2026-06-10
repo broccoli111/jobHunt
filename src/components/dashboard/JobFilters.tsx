@@ -12,9 +12,9 @@ export interface FilterState {
 }
 
 export const DEFAULT_FILTERS: FilterState = {
-  roleFocus: ["design_systems"],
-  workMode: ["remote"],
-  seniority: ["ic6", "staff", "principal", "lead"],
+  roleFocus: ["design_systems", "product_design"],
+  workMode: ["remote", "hybrid"],
+  seniority: ["ic6", "staff", "principal", "lead", "senior"],
   companyIds: [],
   salaryVisibility: "all",
   publicOnly: null,

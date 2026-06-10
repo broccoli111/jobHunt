@@ -1,4 +1,5 @@
 import { DESIGN_DEPARTMENT_KEYWORDS } from "@/config/companies";
+import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig } from "@/types";
 import type { RawJobPosting } from "@/types";
@@ -14,22 +15,11 @@ interface GreenhouseJob {
 }
 
 function isDesignRole(job: GreenhouseJob): boolean {
-  const titleLower = job.title.toLowerCase();
-  const deptText = job.departments.map((d) => d.name.toLowerCase()).join(" ");
-
-  if (DESIGN_DEPARTMENT_KEYWORDS.some((k) => deptText.includes(k) || titleLower.includes(k))) {
+  const deptText = job.departments.map((d) => d.name).join(" ");
+  if (DESIGN_DEPARTMENT_KEYWORDS.some((k) => deptText.toLowerCase().includes(k))) {
     return true;
   }
-
-  const designTitlePatterns = [
-    "designer",
-    "design",
-    "ux",
-    "user experience",
-    "product design",
-    "design system",
-  ];
-  return designTitlePatterns.some((p) => titleLower.includes(p));
+  return isDesignJobTitle(job.title, deptText);
 }
 
 export async function fetchGreenhouseJobs(

@@ -7,7 +7,7 @@ A Vercel-deployable web dashboard that finds, normalizes, deduplicates, scores, 
 ## Features
 
 - **Weighted match scoring** (0–100%) comparing job responsibilities against a senior design systems leader profile
-- **Multi-source ingestion** from Greenhouse, Lever, Ashby ATS APIs plus Remotive job board
+- **Multi-source ingestion** from Greenhouse, Lever, Ashby ATS APIs plus Remotive, Jobicy, Arbeitnow, and Remote OK job boards
 - **Configurable seed list** of 90+ top technology companies (`src/config/companies.ts`)
 - **Deduplication**, compensation estimates, stock prices, company logos
 - **Daily cron refresh** at 7:00 AM Eastern via Vercel Cron
@@ -115,6 +115,9 @@ vercel.json         # Cron + build config
 
 ## Known limitations
 
+- **LinkedIn is not scraped** — LinkedIn prohibits automated scraping in its Terms of Service and does not offer a public job search API. jobHunt uses company ATS feeds (Greenhouse, Lever, Ashby) and public job boards instead.
+- **Dashboard filters reduce visible count** — the default view targets design-systems + senior IC roles. The header shows how many jobs are hidden by active filters vs. total in the database.
+- **13 seed companies lack ATS config** (Google, Apple, Microsoft, Amazon, etc.) — add board tokens in `src/config/companies.ts` or new adapters as needed.
 - Workday / SmartRecruiters adapters are stubs
 - Compensation data uses public benchmarks, not live APIs
 - Stock prices via Yahoo Finance (may rate-limit)
