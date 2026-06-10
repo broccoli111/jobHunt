@@ -26,7 +26,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
 
   const comp = job.compensation;
   const stock = job.stock_price;
-  const description = stripHtml(job.description ?? "").slice(0, 4000);
+  const description = stripHtml(job.description ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm">

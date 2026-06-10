@@ -1,3 +1,4 @@
+import type { JobWithCompany } from "@/types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -28,6 +29,26 @@ export function formatSalaryRange(
   }
   if (min != null) return `${formatCurrency(min, currency)}+`;
   return `Up to ${formatCurrency(max!, currency)}`;
+}
+
+/** Listed posting salary, with estimated company comp as fallback. */
+export function formatJobSalaryDisplay(job: JobWithCompany): string {
+  const listed = formatSalaryRange(
+    job.salary_min,
+    job.salary_max,
+    job.salary_currency ?? "USD",
+  );
+  if (listed !== "Not listed") return listed;
+
+  const comp = job.compensation;
+  if (comp?.total_comp_min != null && comp?.total_comp_max != null) {
+    return `Est. ${formatCurrency(comp.total_comp_min)} – ${formatCurrency(comp.total_comp_max)}`;
+  }
+  if (comp?.base_min != null && comp?.base_max != null) {
+    return `Est. ${formatCurrency(comp.base_min)} – ${formatCurrency(comp.base_max)}`;
+  }
+
+  return "Not listed";
 }
 
 export function formatPercent(value: number): string {

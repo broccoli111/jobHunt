@@ -32,10 +32,16 @@ export async function fetchRemotiveDesignJobs(): Promise<RawJobPosting[]> {
       let salaryMin: number | null = null;
       let salaryMax: number | null = null;
       if (job.salary) {
-        const nums = job.salary.match(/[\d,]+/g)?.map((n) => parseInt(n.replace(/,/g, ""), 10));
+        const nums = job.salary
+          .match(/[\d,]+/g)
+          ?.map((n) => parseInt(n.replace(/,/g, ""), 10))
+          .filter((n) => n >= 10_000);
         if (nums && nums.length >= 2) {
           salaryMin = nums[0];
           salaryMax = nums[1];
+        } else if (nums && nums.length === 1) {
+          salaryMin = nums[0];
+          salaryMax = nums[0];
         }
       }
 

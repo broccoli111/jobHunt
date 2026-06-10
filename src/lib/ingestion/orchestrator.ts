@@ -1,5 +1,6 @@
 import { TECH_COMPANIES } from "@/config/companies";
 import { deduplicateJobs } from "@/lib/deduplication/deduplicator";
+import { enrichPostingSalary } from "@/lib/ingestion/enrich-posting";
 import { fetchAshbyJobs } from "@/lib/ingestion/adapters/ashby";
 import { fetchGreenhouseJobs } from "@/lib/ingestion/adapters/greenhouse";
 import { fetchLeverJobs } from "@/lib/ingestion/adapters/lever";
@@ -106,7 +107,8 @@ export async function runIngestion(): Promise<IngestionResult> {
     errors.push(`Remotive: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  const { jobs: deduped, duplicatesRemoved } = deduplicateJobs(allPostings);
+  const enrichedPostings = allPostings.map(enrichPostingSalary);
+  const { jobs: deduped, duplicatesRemoved } = deduplicateJobs(enrichedPostings);
 
   const processed: ProcessedJob[] = deduped.map((job) => {
     const { responsibilities, qualifications } = extractTextSections(job.description);

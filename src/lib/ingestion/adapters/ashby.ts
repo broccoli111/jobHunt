@@ -7,6 +7,7 @@ interface AshbyJob {
   location: string;
   externalLink?: string;
   descriptionHtml?: string;
+  descriptionPlain?: string;
   publishedAt?: string;
   department?: string;
   team?: string;
@@ -42,7 +43,7 @@ export async function fetchAshbyJobs(
         companyName: company.name,
         companyDomain: company.domain,
         title: job.title,
-        description: stripHtml(job.descriptionHtml ?? ""),
+        description: stripHtml(job.descriptionPlain ?? job.descriptionHtml ?? ""),
         location: job.location ?? "Unknown",
         url: job.externalLink ?? `https://jobs.ashbyhq.com/${boardToken}/${job.id}`,
         sourceName: `Ashby (${company.name})`,

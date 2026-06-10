@@ -7,7 +7,7 @@ import { formatCompSummary } from "@/lib/compensation/estimator";
 import {
   formatCurrency,
   formatRoleFocus,
-  formatSalaryRange,
+  formatJobSalaryDisplay,
   formatSeniority,
   formatWorkMode,
   truncate,
@@ -65,7 +65,7 @@ export function JobTable({ jobs, onSelect }: JobTableProps) {
                 </div>
               </td>
               <td className="hidden lg:table-cell px-4 py-3 text-slate-600">
-                {formatSalaryRange(job.salary_min, job.salary_max, job.salary_currency ?? "USD")}
+                {formatJobSalaryDisplay(job)}
               </td>
               <td className="hidden md:table-cell px-4 py-3 text-slate-600 max-w-[10rem]">
                 {truncate(job.location ?? "—", 40)}

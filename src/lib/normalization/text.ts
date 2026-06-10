@@ -74,35 +74,83 @@ export function stripHtml(html: string): string {
   return text;
 }
 
+const SECTION_MARKERS = [
+  "responsibilities",
+  "what you'll do",
+  "what you will do",
+  "the role",
+  "qualifications",
+  "requirements",
+  "what you'll bring",
+  "what you will bring",
+  "what we're looking for",
+  "about you",
+  "pay range",
+  "compensation",
+  "benefits",
+  "how to apply",
+];
+
+function findSectionStart(lower: string, markers: string[]): { index: number; marker: string } | null {
+  let best: { index: number; marker: string } | null = null;
+
+  for (const marker of markers) {
+    const idx = lower.indexOf(marker);
+    if (idx < 0) continue;
+    if (!best || idx < best.index) {
+      best = { index: idx, marker };
+    }
+  }
+
+  return best;
+}
+
+function extractSection(
+  fullText: string,
+  startMarkers: string[],
+  boundaryMarkers: string[],
+): string {
+  const lower = fullText.toLowerCase();
+  const start = findSectionStart(lower, startMarkers);
+  if (!start) return "";
+
+  let end = fullText.length;
+  for (const marker of boundaryMarkers) {
+    if (startMarkers.includes(marker)) continue;
+    const idx = lower.indexOf(marker, start.index + start.marker.length);
+    if (idx > start.index && idx < end) {
+      end = idx;
+    }
+  }
+
+  return fullText.slice(start.index, end).trim();
+}
+
 export function extractTextSections(description: string): {
   fullText: string;
   responsibilities: string;
   qualifications: string;
 } {
   const fullText = stripHtml(description);
-  const lower = fullText.toLowerCase();
 
-  const respMarkers = ["responsibilities", "what you'll do", "what you will do", "the role"];
-  const qualMarkers = ["qualifications", "requirements", "what you'll bring", "what you will bring"];
+  const responsibilities = extractSection(
+    fullText,
+    ["responsibilities", "what you'll do", "what you will do", "the role"],
+    SECTION_MARKERS,
+  );
 
-  let responsibilities = "";
-  let qualifications = "";
-
-  for (const marker of respMarkers) {
-    const idx = lower.indexOf(marker);
-    if (idx >= 0) {
-      responsibilities = fullText.slice(idx, idx + 2000);
-      break;
-    }
-  }
-
-  for (const marker of qualMarkers) {
-    const idx = lower.indexOf(marker);
-    if (idx >= 0) {
-      qualifications = fullText.slice(idx, idx + 2000);
-      break;
-    }
-  }
+  const qualifications = extractSection(
+    fullText,
+    [
+      "qualifications",
+      "requirements",
+      "what you'll bring",
+      "what you will bring",
+      "what we're looking for",
+      "about you",
+    ],
+    SECTION_MARKERS,
+  );
 
   return { fullText, responsibilities, qualifications };
 }

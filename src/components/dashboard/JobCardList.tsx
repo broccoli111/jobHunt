@@ -8,7 +8,7 @@ import { formatCompSummary } from "@/lib/compensation/estimator";
 import {
   formatCurrency,
   formatRoleFocus,
-  formatSalaryRange,
+  formatJobSalaryDisplay,
   formatSeniority,
   formatWorkMode,
 } from "@/lib/utils";
@@ -70,7 +70,7 @@ export function JobCardList({ jobs, onSelect }: JobCardListProps) {
 
             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
               <CardField label="Salary">
-                {formatSalaryRange(job.salary_min, job.salary_max, job.salary_currency ?? "USD")}
+                {formatJobSalaryDisplay(job)}
               </CardField>
               <CardField label="Work mode">
                 <Badge
