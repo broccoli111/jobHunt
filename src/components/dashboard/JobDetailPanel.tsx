@@ -4,11 +4,11 @@ import { CompanyLogo } from "@/components/dashboard/CompanyLogo";
 import { MatchScore } from "@/components/dashboard/MatchScore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { stripHtml } from "@/lib/normalization/text";
+import { normalizeJobText } from "@/lib/normalization/text";
 import {
   formatCurrency,
+  formatJobSalaryDisplay,
   formatRoleFocus,
-  formatSalaryRange,
   formatSeniority,
   formatWorkMode,
 } from "@/lib/utils";
@@ -26,7 +26,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
 
   const comp = job.compensation;
   const stock = job.stock_price;
-  const description = stripHtml(job.description ?? "");
+  const description = normalizeJobText(job.description ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm">
@@ -71,7 +71,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
             <div className="rounded-lg bg-slate-50 p-4 text-sm space-y-1">
               <p>
                 <span className="text-slate-500">Listed salary: </span>
-                {formatSalaryRange(job.salary_min, job.salary_max, job.salary_currency ?? "USD")}
+                {formatJobSalaryDisplay(job)}
               </p>
               {comp?.total_comp_min != null ? (
                 <>

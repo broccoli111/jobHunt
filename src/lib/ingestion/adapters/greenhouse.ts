@@ -1,5 +1,5 @@
 import { DESIGN_DEPARTMENT_KEYWORDS } from "@/config/companies";
-import { stripHtml } from "@/lib/normalization/text";
+import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig } from "@/types";
 import type { RawJobPosting } from "@/types";
 
@@ -55,7 +55,7 @@ export async function fetchGreenhouseJobs(
         companyName: company.name,
         companyDomain: company.domain,
         title: job.title,
-        description: stripHtml(job.content ?? ""),
+        description: normalizeJobText(job.content ?? ""),
         location: job.location?.name ?? "Unknown",
         url: job.absolute_url,
         sourceName: `Greenhouse (${company.name})`,

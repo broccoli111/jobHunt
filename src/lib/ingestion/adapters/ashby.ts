@@ -1,4 +1,4 @@
-import { stripHtml } from "@/lib/normalization/text";
+import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig, RawJobPosting } from "@/types";
 
 interface AshbyJob {
@@ -43,7 +43,7 @@ export async function fetchAshbyJobs(
         companyName: company.name,
         companyDomain: company.domain,
         title: job.title,
-        description: stripHtml(job.descriptionPlain ?? job.descriptionHtml ?? ""),
+        description: normalizeJobText(job.descriptionPlain ?? job.descriptionHtml ?? ""),
         location: job.location ?? "Unknown",
         url: job.externalLink ?? `https://jobs.ashbyhq.com/${boardToken}/${job.id}`,
         sourceName: `Ashby (${company.name})`,

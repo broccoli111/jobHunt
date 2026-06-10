@@ -3,7 +3,7 @@ import {
   normalizeCompanyName,
   normalizeJobTitle,
   normalizeLocation,
-  stripHtml,
+  normalizeJobText,
 } from "@/lib/normalization/text";
 import type { RawJobPosting, SourceType } from "@/types";
 
@@ -92,8 +92,8 @@ function pickPreferred(
     companyDomain: preferred.companyDomain ?? alternate.companyDomain,
     title: preferred.title,
     description: (() => {
-      const preferredDesc = stripHtml(preferred.description);
-      const alternateDesc = stripHtml(alternate.description);
+      const preferredDesc = normalizeJobText(preferred.description);
+      const alternateDesc = normalizeJobText(alternate.description);
       return preferredDesc.length >= alternateDesc.length ? preferredDesc : alternateDesc;
     })(),
     location: preferred.location || alternate.location,
@@ -120,7 +120,7 @@ export function deduplicateJobs(postings: RawJobPosting[]): {
   for (const posting of postings) {
     const normalizedPosting: RawJobPosting = {
       ...posting,
-      description: stripHtml(posting.description),
+      description: normalizeJobText(posting.description),
     };
 
     let merged = false;

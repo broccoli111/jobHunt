@@ -39,7 +39,14 @@ function decodeHtmlEntitiesOnce(text: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/&apos;/gi, "'");
+    .replace(/&apos;/gi, "'")
+    .replace(/&mdash;/gi, "—")
+    .replace(/&ndash;/gi, "–")
+    .replace(/&hellip;/gi, "…")
+    .replace(/&rsquo;/gi, "'")
+    .replace(/&lsquo;/gi, "'")
+    .replace(/&rdquo;/gi, '"')
+    .replace(/&ldquo;/gi, '"');
 }
 
 export function decodeHtmlEntities(text: string): string {
@@ -72,6 +79,41 @@ export function stripHtml(html: string): string {
     .trim();
 
   return text;
+}
+
+/** Remove common markdown formatting while keeping readable plain text. */
+export function stripMarkdown(text: string): string {
+  if (!text) return "";
+
+  return text
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/`{1,3}([^`]+)`{1,3}/g, "$1")
+    .replace(/^>\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "• ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Normalize job posting text: decode entities, strip HTML, strip markdown. */
+export function normalizeJobText(input: string): string {
+  if (!input) return "";
+
+  const hasHtml = /<\/?[a-z][\s\S]*?>/i.test(input);
+  let text = hasHtml ? stripHtml(input) : decodeHtmlEntities(input);
+  text = stripMarkdown(text);
+  text = decodeHtmlEntities(text);
+
+  return text
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
 
 const SECTION_MARKERS = [
@@ -131,7 +173,7 @@ export function extractTextSections(description: string): {
   responsibilities: string;
   qualifications: string;
 } {
-  const fullText = stripHtml(description);
+  const fullText = normalizeJobText(description);
 
   const responsibilities = extractSection(
     fullText,

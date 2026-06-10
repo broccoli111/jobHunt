@@ -1,4 +1,4 @@
-import { stripHtml } from "@/lib/normalization/text";
+import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
 /**
@@ -49,7 +49,7 @@ export async function fetchRemotiveDesignJobs(): Promise<RawJobPosting[]> {
         externalId: `remotive-${job.id}`,
         companyName: job.company_name,
         title: job.title,
-        description: stripHtml(job.description),
+        description: normalizeJobText(job.description),
         location: job.candidate_required_location || "Remote",
         url: job.url,
         sourceName: "Remotive",

@@ -1,3 +1,4 @@
+import { extractSalaryFromText } from "@/lib/normalization/salary";
 import type { JobWithCompany } from "@/types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -31,12 +32,38 @@ export function formatSalaryRange(
   return `Up to ${formatCurrency(max!, currency)}`;
 }
 
+function getListedSalary(job: JobWithCompany): {
+  min: number | null;
+  max: number | null;
+  currency: string;
+} {
+  if (job.salary_min != null || job.salary_max != null) {
+    return {
+      min: job.salary_min,
+      max: job.salary_max,
+      currency: job.salary_currency ?? "USD",
+    };
+  }
+
+  const extracted = extractSalaryFromText(job.description ?? "");
+  if (extracted.min != null) {
+    return {
+      min: extracted.min,
+      max: extracted.max ?? extracted.min,
+      currency: extracted.currency,
+    };
+  }
+
+  return { min: null, max: null, currency: "USD" };
+}
+
 /** Listed posting salary, with estimated company comp as fallback. */
 export function formatJobSalaryDisplay(job: JobWithCompany): string {
+  const listedSalary = getListedSalary(job);
   const listed = formatSalaryRange(
-    job.salary_min,
-    job.salary_max,
-    job.salary_currency ?? "USD",
+    listedSalary.min,
+    listedSalary.max,
+    listedSalary.currency,
   );
   if (listed !== "Not listed") return listed;
 

@@ -1,4 +1,4 @@
-import { stripHtml } from "@/lib/normalization/text";
+import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig, RawJobPosting } from "@/types";
 
 interface LeverPosting {
@@ -45,7 +45,7 @@ export async function fetchLeverJobs(
         companyName: company.name,
         companyDomain: company.domain,
         title: posting.text,
-        description: posting.descriptionPlain ?? stripHtml(posting.description ?? ""),
+        description: normalizeJobText(posting.descriptionPlain ?? posting.description ?? ""),
         location: posting.categories.location ?? "Unknown",
         url: posting.hostedUrl,
         sourceName: `Lever (${company.name})`,

@@ -1,4 +1,4 @@
-import { decodeHtmlEntities } from "@/lib/normalization/text";
+import { decodeHtmlEntities, normalizeJobText } from "@/lib/normalization/text";
 
 export interface ExtractedSalary {
   min: number | null;
@@ -32,12 +32,15 @@ function parseAmountToken(token: string): number | null {
   return value >= MIN_SALARY && value <= MAX_SALARY ? value : null;
 }
 
+function prepareSalaryText(text: string): string {
+  return normalizeJobText(text);
+}
+
 function amountsFromMatches(text: string): number[] {
   const amounts: number[] = [];
   const patterns = [
     /[$€£]\s*([\d,]+(?:\.\d+)?)\s*k?\b/gi,
     /\b([\d,]+)\s*k\s*(?:usd|eur|gbp|cad)?\b/gi,
-    /\b(\d{2,3},\d{3})\b/g,
   ];
 
   for (const pattern of patterns) {
@@ -49,6 +52,32 @@ function amountsFromMatches(text: string): number[] {
   }
 
   return amounts;
+}
+
+function extractAdjacentSalaryRange(text: string): ExtractedSalary | null {
+  const rangePattern =
+    /[$€£]\s*([\d,]+(?:\.\d+)?)\s*k?\s*(?:usd|eur|gbp|cad)?\s*(?:—|–|-|\bto\b)\s*[$€£]?\s*([\d,]+(?:\.\d+)?)\s*k?\s*(usd|eur|gbp|cad)?/gi;
+
+  let match: RegExpExecArray | null;
+  let best: ExtractedSalary | null = null;
+
+  while ((match = rangePattern.exec(text)) !== null) {
+    const min = parseAmountToken(match[1]);
+    const max = parseAmountToken(match[2]);
+    if (min == null || max == null) continue;
+
+    const candidate = {
+      min: Math.min(min, max),
+      max: Math.max(min, max),
+      currency: (match[3] ?? detectCurrency(match[0])).toUpperCase(),
+    };
+
+    if (!best || (candidate.max ?? 0) > (best.max ?? 0)) {
+      best = candidate;
+    }
+  }
+
+  return best;
 }
 
 function toRange(amounts: number[], currency: string): ExtractedSalary {
@@ -107,20 +136,26 @@ function extractFromGreenhousePayRangesField(raw: unknown): ExtractedSalary | nu
 function extractFromSalaryContext(text: string): ExtractedSalary | null {
   const lower = text.toLowerCase();
   const markers = [
+    "annual base salary",
+    "base salary range",
     "pay range",
     "salary range",
     "base pay",
     "base salary",
-    "compensation",
+    "target base salary",
     "annual salary",
+    "compensation range",
   ];
 
   for (const marker of markers) {
     const idx = lower.indexOf(marker);
     if (idx < 0) continue;
 
-    const window = text.slice(idx, idx + 600);
-    const amounts = amountsFromMatches(window);
+    const window = text.slice(idx, idx + 800);
+    const adjacent = extractAdjacentSalaryRange(window);
+    if (adjacent?.min != null) return adjacent;
+
+    const amounts = amountsFromMatches(window).filter((amount) => amount >= MIN_SALARY);
     if (amounts.length >= 1) {
       return toRange(amounts, detectCurrency(window));
     }
@@ -135,19 +170,25 @@ export function extractSalaryFromText(text: string): ExtractedSalary {
     return { min: null, max: null, currency: "USD" };
   }
 
-  const decoded = decodeHtmlEntities(text);
-  const fromPayRange = extractFromGreenhousePayRange(decoded);
+  const normalized = prepareSalaryText(text);
+  const fromPayRange = extractFromGreenhousePayRange(normalized);
   if (fromPayRange?.min != null) return fromPayRange;
 
-  const fromContext = extractFromSalaryContext(decoded);
+  const adjacent = extractAdjacentSalaryRange(normalized);
+  if (adjacent?.min != null) return adjacent;
+
+  const fromContext = extractFromSalaryContext(normalized);
   if (fromContext?.min != null) return fromContext;
 
-  const amounts = amountsFromMatches(decoded);
+  const amounts = amountsFromMatches(normalized).filter((amount) => amount >= MIN_SALARY);
   if (amounts.length >= 2) {
-    return toRange(amounts, detectCurrency(decoded));
+    return toRange(amounts, detectCurrency(normalized));
+  }
+  if (amounts.length === 1) {
+    return { min: amounts[0], max: amounts[0], currency: detectCurrency(normalized) };
   }
 
-  return { min: null, max: null, currency: detectCurrency(decoded) };
+  return { min: null, max: null, currency: detectCurrency(normalized) };
 }
 
 export function extractSalaryFromPosting(
@@ -164,9 +205,13 @@ export function extractSalaryFromPosting(
       if (typeof raw[key] === "string") sources.push(raw[key] as string);
     }
   }
-  sources.push(description);
+  if (description) sources.push(description);
 
   for (const source of sources) {
+    const decoded = decodeHtmlEntities(source);
+    const fromPayRange = extractFromGreenhousePayRange(decoded);
+    if (fromPayRange?.min != null) return fromPayRange;
+
     const extracted = extractSalaryFromText(source);
     if (extracted.min != null) return extracted;
   }
