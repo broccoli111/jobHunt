@@ -4,6 +4,7 @@ import { CompanyLogo } from "@/components/dashboard/CompanyLogo";
 import { MatchScore } from "@/components/dashboard/MatchScore";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { stripHtml } from "@/lib/normalization/text";
 import {
   formatCurrency,
   formatRoleFocus,
@@ -25,6 +26,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
 
   const comp = job.compensation;
   const stock = job.stock_price;
+  const description = stripHtml(job.description ?? "").slice(0, 4000);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm">
@@ -118,7 +120,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
           <section>
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Description</h3>
             <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap">
-              {job.description?.slice(0, 4000) ?? "No description available."}
+              {description || "No description available."}
             </div>
           </section>
 

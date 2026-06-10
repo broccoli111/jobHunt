@@ -2,7 +2,7 @@ import { TECH_COMPANIES } from "@/config/companies";
 import { estimateCompensation } from "@/lib/compensation/estimator";
 import { getDatabase } from "@/lib/db";
 import { getLogoUrl } from "@/lib/logos";
-import { normalizeCompanyName } from "@/lib/normalization/text";
+import { normalizeCompanyName, stripHtml } from "@/lib/normalization/text";
 import type { ProcessedJob } from "@/lib/ingestion/orchestrator";
 import { fetchStockPrices } from "@/lib/stock/fetcher";
 
@@ -63,9 +63,9 @@ export async function persistIngestionResult(
     const { job, created } = await db.upsertJob(company.id, {
       title: item.posting.title,
       normalized_title: item.normalizedTitle,
-      description: item.posting.description,
-      responsibilities: item.responsibilities,
-      qualifications: item.qualifications,
+      description: stripHtml(item.posting.description),
+      responsibilities: stripHtml(item.responsibilities),
+      qualifications: stripHtml(item.qualifications),
       salary_min: item.posting.salaryMin ?? null,
       salary_max: item.posting.salaryMax ?? null,
       salary_currency: item.posting.salaryCurrency ?? "USD",

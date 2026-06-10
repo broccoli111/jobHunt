@@ -3,6 +3,7 @@ import {
   normalizeCompanyName,
   normalizeJobTitle,
   normalizeLocation,
+  stripHtml,
 } from "@/lib/normalization/text";
 import type { RawJobPosting, SourceType } from "@/types";
 
@@ -90,10 +91,11 @@ function pickPreferred(
     companyName: preferred.companyName,
     companyDomain: preferred.companyDomain ?? alternate.companyDomain,
     title: preferred.title,
-    description:
-      preferred.description.length >= alternate.description.length
-        ? preferred.description
-        : alternate.description,
+    description: (() => {
+      const preferredDesc = stripHtml(preferred.description);
+      const alternateDesc = stripHtml(alternate.description);
+      return preferredDesc.length >= alternateDesc.length ? preferredDesc : alternateDesc;
+    })(),
     location: preferred.location || alternate.location,
     url: preferred.url,
     sourceName: preferred.sourceName,
@@ -116,11 +118,16 @@ export function deduplicateJobs(postings: RawJobPosting[]): {
   let duplicatesRemoved = 0;
 
   for (const posting of postings) {
+    const normalizedPosting: RawJobPosting = {
+      ...posting,
+      description: stripHtml(posting.description),
+    };
+
     let merged = false;
 
     for (let i = 0; i < result.length; i++) {
-      if (isLikelyDuplicate(result[i], posting)) {
-        result[i] = pickPreferred(result[i], posting);
+      if (isLikelyDuplicate(result[i], normalizedPosting)) {
+        result[i] = pickPreferred(result[i], normalizedPosting);
         merged = true;
         duplicatesRemoved++;
         break;
@@ -129,9 +136,9 @@ export function deduplicateJobs(postings: RawJobPosting[]): {
 
     if (!merged) {
       result.push({
-        ...posting,
+        ...normalizedPosting,
         alternateUrls: [],
-        preferredSourceType: posting.sourceType,
+        preferredSourceType: normalizedPosting.sourceType,
       });
     }
   }

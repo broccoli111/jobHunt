@@ -29,17 +29,38 @@ export function normalizeLocation(location: string): string {
     .trim();
 }
 
+export function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'");
+}
+
+/** Strip HTML tags and decode entities; preserve paragraph breaks where possible. */
 export function stripHtml(html: string): string {
-  return html
+  if (!html) return "";
+
+  let text = decodeHtmlEntities(html);
+
+  text = text
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr|section|article|ul|ol)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "\n• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
     .trim();
+
+  return text;
 }
 
 export function extractTextSections(description: string): {
