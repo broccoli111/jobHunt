@@ -12,6 +12,9 @@ import type { CompanyConfig } from "@/types";
 export const TECH_COMPANIES: CompanyConfig[] = [
   { name: "Meta", domain: "meta.com", ticker: "META", isPublic: true, careersUrl: "https://www.metacareers.com/", ats: { type: "greenhouse", boardToken: "meta" } },
   { name: "Google", domain: "google.com", ticker: "GOOGL", isPublic: true, careersUrl: "https://careers.google.com/" },
+  { name: "Waymo", domain: "waymo.com", ticker: "GOOGL", isPublic: true, careersUrl: "https://waymo.com/careers/", ats: { type: "greenhouse", boardToken: "waymo" } },
+  { name: "DeepMind", domain: "deepmind.com", ticker: "GOOGL", isPublic: true, careersUrl: "https://deepmind.google/careers/", ats: { type: "greenhouse", boardToken: "deepmind" } },
+  { name: "Wing", domain: "wing.com", ticker: "GOOGL", isPublic: true, careersUrl: "https://wing.com/careers/", ats: { type: "greenhouse", boardToken: "wing" } },
   { name: "Apple", domain: "apple.com", ticker: "AAPL", isPublic: true, careersUrl: "https://jobs.apple.com/" },
   { name: "Microsoft", domain: "microsoft.com", ticker: "MSFT", isPublic: true, careersUrl: "https://careers.microsoft.com/" },
   { name: "Amazon", domain: "amazon.com", ticker: "AMZN", isPublic: true, careersUrl: "https://www.amazon.jobs/" },
@@ -50,7 +53,7 @@ export const TECH_COMPANIES: CompanyConfig[] = [
   { name: "GitLab", domain: "gitlab.com", ticker: "GTLB", isPublic: true, careersUrl: "https://about.gitlab.com/jobs/", ats: { type: "greenhouse", boardToken: "gitlab" } },
   { name: "HubSpot", domain: "hubspot.com", ticker: "HUBS", isPublic: true, careersUrl: "https://www.hubspot.com/careers", ats: { type: "greenhouse", boardToken: "hubspot" } },
   { name: "Intercom", domain: "intercom.com", ticker: null, isPublic: false, careersUrl: "https://www.intercom.com/careers", ats: { type: "greenhouse", boardToken: "intercom" } },
-  { name: "LinkedIn", domain: "linkedin.com", ticker: "MSFT", isPublic: true, careersUrl: "https://careers.linkedin.com/" },
+  { name: "LinkedIn", domain: "linkedin.com", ticker: "MSFT", isPublic: true, careersUrl: "https://careers.linkedin.com/", ats: { type: "greenhouse", boardToken: "linkedin" } },
   { name: "MongoDB", domain: "mongodb.com", ticker: "MDB", isPublic: true, careersUrl: "https://www.mongodb.com/careers", ats: { type: "greenhouse", boardToken: "mongodb" } },
   { name: "Okta", domain: "okta.com", ticker: "OKTA", isPublic: true, careersUrl: "https://www.okta.com/company/careers/", ats: { type: "greenhouse", boardToken: "okta" } },
   { name: "Pinterest", domain: "pinterest.com", ticker: "PINS", isPublic: true, careersUrl: "https://www.pinterestcareers.com/", ats: { type: "greenhouse", boardToken: "pinterest" } },

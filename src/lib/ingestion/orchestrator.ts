@@ -2,12 +2,17 @@ import { TECH_COMPANIES } from "@/config/companies";
 import { deduplicateJobs } from "@/lib/deduplication/deduplicator";
 import { enrichPostingSalary } from "@/lib/ingestion/enrich-posting";
 import { fetchAshbyJobs } from "@/lib/ingestion/adapters/ashby";
-import { fetchGreenhouseJobs } from "@/lib/ingestion/adapters/greenhouse";
-import { fetchLeverJobs } from "@/lib/ingestion/adapters/lever";
 import { fetchArbeitnowDesignJobs } from "@/lib/ingestion/adapters/arbeitnow";
+import { fetchGreenhouseJobs } from "@/lib/ingestion/adapters/greenhouse";
+import { fetchHimalayasDesignJobs } from "@/lib/ingestion/adapters/himalayas";
+import { fetchJSearchDesignJobs } from "@/lib/ingestion/adapters/jsearch";
 import { fetchJobicyDesignJobs } from "@/lib/ingestion/adapters/jobicy";
+import { fetchLeverJobs } from "@/lib/ingestion/adapters/lever";
+import { fetchRemoteJobsOrgDesignJobs } from "@/lib/ingestion/adapters/remotejobs-org";
 import { fetchRemoteOkDesignJobs } from "@/lib/ingestion/adapters/remoteok";
 import { fetchRemotiveDesignJobs } from "@/lib/ingestion/adapters/remotive";
+import { fetchSmartRecruitersJobs } from "@/lib/ingestion/adapters/smartrecruiters";
+import { fetchWeWorkRemotelyDesignJobs } from "@/lib/ingestion/adapters/weworkremotely";
 import { fetchWorkdayJobs } from "@/lib/ingestion/adapters/workday";
 import { extractTextSections } from "@/lib/normalization/text";
 import {
@@ -34,6 +39,8 @@ async function fetchCompanyJobs(company: CompanyConfig): Promise<RawJobPosting[]
       return fetchAshbyJobs(company, boardToken);
     case "workday":
       return fetchWorkdayJobs();
+    case "smartrecruiters":
+      return fetchSmartRecruitersJobs(company, boardToken);
     default:
       return [];
   }
@@ -108,6 +115,10 @@ export async function runIngestion(): Promise<IngestionResult> {
     { name: "Jobicy", fetch: fetchJobicyDesignJobs },
     { name: "Arbeitnow", fetch: fetchArbeitnowDesignJobs },
     { name: "Remote OK", fetch: fetchRemoteOkDesignJobs },
+    { name: "Himalayas", fetch: fetchHimalayasDesignJobs },
+    { name: "RemoteJobs.org", fetch: fetchRemoteJobsOrgDesignJobs },
+    { name: "We Work Remotely", fetch: fetchWeWorkRemotelyDesignJobs },
+    { name: "JSearch", fetch: fetchJSearchDesignJobs },
   ];
 
   for (const { name, fetch } of jobBoardFetchers) {
