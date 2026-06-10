@@ -98,11 +98,25 @@ curl -X POST http://localhost:3000/api/score-job \
 
 ## Deploy to Vercel
 
-1. Push to GitHub and import in Vercel
-2. Add environment variables (`DATABASE_URL`, `CRON_SECRET`)
-3. Connect Vercel Postgres or Supabase
-4. Run migrations on the production database
-5. Deploy — cron runs daily per `vercel.json`
+1. Import [github.com/broccoli111/jobHunt](https://github.com/broccoli111/jobHunt) in Vercel
+2. **Framework Preset:** must be **Next.js** (not "Other")
+3. **Root Directory:** leave empty (repo root contains `package.json`)
+4. Add environment variables (`DATABASE_URL`, `CRON_SECRET`)
+5. Connect Vercel Postgres or Supabase
+6. Run migrations on the production database
+7. Deploy — cron runs daily per `vercel.json`
+
+### Fixing `404: NOT_FOUND` on Vercel
+
+If you see `404: NOT_FOUND` with an ID like `iad1::...`, the deployment exists but Vercel isn't serving the app correctly. Check:
+
+1. **Framework Preset** → Project Settings → Build & Deployment → set to **Next.js**, then **Redeploy** (uncheck "Use existing build cache")
+2. **Root Directory** → must be blank unless code lives in a subfolder
+3. **Production branch** → should be `main` with a successful latest deployment
+4. **Build logs** → open the latest deployment; confirm `pnpm build` completes and shows route `/`
+5. **URL** → use the `*.vercel.app` URL from the successful deployment, not an old/deleted preview link
+
+`vercel.json` in this repo sets `framework: nextjs` and `pnpm` build commands explicitly.
 
 ```json
 {
