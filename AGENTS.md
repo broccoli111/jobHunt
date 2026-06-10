@@ -4,7 +4,7 @@
 
 Next.js App Router application deployed on Vercel with PostgreSQL.
 
-**Repository:** [github.com/broccoli111/jobHunt](https://github.com/broccoli111/jobHunt)
+**Repository:** [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt)
 
 ## Services
 

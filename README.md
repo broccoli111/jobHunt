@@ -17,9 +17,9 @@ A Vercel-deployable web dashboard that finds, normalizes, deduplicates, scores, 
 
 ## Repository
 
-**GitHub:** [github.com/broccoli111/jobHunt](https://github.com/broccoli111/jobHunt)
+**GitHub:** [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt)
 
-Vercel should import `broccoli111/jobHunt` directly — no repo rename required.
+Vercel should import `broccoli111/job-hunt`.
 
 ## Tech stack
 
@@ -98,7 +98,7 @@ curl -X POST http://localhost:3000/api/score-job \
 
 ## Deploy to Vercel
 
-1. Import [github.com/broccoli111/jobHunt](https://github.com/broccoli111/jobHunt) in Vercel
+1. Import [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt) in Vercel
 2. **Framework Preset:** must be **Next.js** (not "Other")
 3. **Root Directory:** leave empty (repo root contains `package.json`)
 4. Add environment variables (`DATABASE_URL`, `CRON_SECRET`)
