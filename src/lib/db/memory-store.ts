@@ -1,6 +1,4 @@
 import { randomUUID } from "crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import path from "path";
 import { TECH_COMPANIES } from "@/config/companies";
 import { getLogoUrl } from "@/lib/logos";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/normalization/text";
@@ -15,14 +13,7 @@ import type {
   StockPrice,
 } from "@/types";
 
-function getStorePaths(): { dataDir: string; storeFile: string } {
-  const dataDir = process.env.VERCEL
-    ? path.join("/tmp", "jobhunt")
-    : path.join(process.cwd(), ".data");
-  return { dataDir, storeFile: path.join(dataDir, "store.json") };
-}
-
-interface FileStore {
+interface Store {
   companies: Company[];
   jobs: Job[];
   job_sources: JobSource[];
@@ -32,8 +23,8 @@ interface FileStore {
   metadata: Record<string, string>;
 }
 
-function defaultStore(): FileStore {
-  const companies: Company[] = TECH_COMPANIES.map((c) => ({
+function seedCompanies(): Company[] {
+  return TECH_COMPANIES.map((c) => ({
     id: randomUUID(),
     name: c.name,
     normalized_name: normalizeCompanyName(c.name),
@@ -43,45 +34,22 @@ function defaultStore(): FileStore {
     careers_url: c.careersUrl,
     domain: c.domain,
   }));
-
-  return {
-    companies,
-    jobs: [],
-    job_sources: [],
-    compensation_estimates: [],
-    stock_prices: [],
-    ingestion_runs: [],
-    metadata: { last_refreshed_at: "" },
-  };
 }
 
-function loadStore(): FileStore {
-  const { dataDir, storeFile } = getStorePaths();
-  if (existsSync(storeFile)) {
-    return JSON.parse(readFileSync(storeFile, "utf-8")) as FileStore;
-  }
-  return defaultStore();
-}
-
-function saveStore(store: FileStore): void {
-  try {
-    const { dataDir, storeFile } = getStorePaths();
-    if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-    writeFileSync(storeFile, JSON.stringify(store, null, 2));
-  } catch (error) {
-    console.warn("file-store: could not persist (read-only or ephemeral fs)", error);
-  }
-}
-
-export class FileDatabase {
-  private store: FileStore;
+/** In-memory store for serverless when no DATABASE_URL is configured. */
+export class MemoryDatabase {
+  private store: Store;
 
   constructor() {
-    this.store = loadStore();
-  }
-
-  private persist() {
-    saveStore(this.store);
+    this.store = {
+      companies: seedCompanies(),
+      jobs: [],
+      job_sources: [],
+      compensation_estimates: [],
+      stock_prices: [],
+      ingestion_runs: [],
+      metadata: { last_refreshed_at: "" },
+    };
   }
 
   async getCompanies(): Promise<Company[]> {
@@ -98,12 +66,10 @@ export class FileDatabase {
     );
     if (existing) {
       Object.assign(existing, { ...data, id: existing.id });
-      this.persist();
       return existing;
     }
     const company: Company = { ...data, id: data.id ?? randomUUID() } as Company;
     this.store.companies.push(company);
-    this.persist();
     return company;
   }
 
@@ -150,33 +116,35 @@ export class FileDatabase {
     const sortOrder = filters.sortOrder ?? "desc";
 
     jobs.sort((a, b) => {
-      const av = sortBy === "company_name"
-        ? this.store.companies.find((c) => c.id === a.company_id)?.name ?? ""
-        : sortBy === "last_seen_at"
-          ? a.last_seen_at
-          : a.match_percentage;
-      const bv = sortBy === "company_name"
-        ? this.store.companies.find((c) => c.id === b.company_id)?.name ?? ""
-        : sortBy === "last_seen_at"
-          ? b.last_seen_at
-          : b.match_percentage;
+      const av =
+        sortBy === "company_name"
+          ? (this.store.companies.find((c) => c.id === a.company_id)?.name ?? "")
+          : sortBy === "last_seen_at"
+            ? a.last_seen_at
+            : a.match_percentage;
+      const bv =
+        sortBy === "company_name"
+          ? (this.store.companies.find((c) => c.id === b.company_id)?.name ?? "")
+          : sortBy === "last_seen_at"
+            ? b.last_seen_at
+            : b.match_percentage;
       if (av < bv) return sortOrder === "asc" ? -1 : 1;
       if (av > bv) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
 
-    return jobs.map((job) => {
-      const company = this.store.companies.find((c) => c.id === job.company_id)!;
-      const compensation = this.store.compensation_estimates.find(
-        (c) => c.company_id === job.company_id,
-      ) ?? null;
-      const stock = this.store.stock_prices
-        .filter((s) => s.company_id === job.company_id)
-        .sort((a, b) => b.fetched_at.localeCompare(a.fetched_at))[0] ?? null;
-      const sources = this.store.job_sources.filter((s) => s.job_id === job.id);
-
-      return { ...job, company, compensation, stock_price: stock, sources };
-    });
+    return jobs.map((job) => ({
+      ...job,
+      company: this.store.companies.find((c) => c.id === job.company_id)!,
+      compensation:
+        this.store.compensation_estimates.find((c) => c.company_id === job.company_id) ??
+        null,
+      stock_price:
+        this.store.stock_prices
+          .filter((s) => s.company_id === job.company_id)
+          .sort((a, b) => b.fetched_at.localeCompare(a.fetched_at))[0] ?? null,
+      sources: this.store.job_sources.filter((s) => s.job_id === job.id),
+    }));
   }
 
   async upsertJob(
@@ -190,7 +158,6 @@ export class FileDatabase {
         j.normalized_title === normalized &&
         j.location === data.location,
     );
-
     const now = new Date().toISOString();
 
     if (existing) {
@@ -200,7 +167,6 @@ export class FileDatabase {
         last_seen_at: now,
         is_active: true,
       });
-      this.persist();
       return { job: existing, created: false };
     }
 
@@ -214,14 +180,12 @@ export class FileDatabase {
       is_active: true,
     } as Job;
     this.store.jobs.push(job);
-    this.persist();
     return { job, created: true };
   }
 
   async addJobSource(source: Omit<JobSource, "id">): Promise<JobSource> {
     const record: JobSource = { ...source, id: randomUUID() };
     this.store.job_sources.push(record);
-    this.persist();
     return record;
   }
 
@@ -231,12 +195,10 @@ export class FileDatabase {
     );
     if (existing) Object.assign(existing, data);
     else this.store.compensation_estimates.push({ ...data, id: randomUUID() });
-    this.persist();
   }
 
   async upsertStockPrice(data: Omit<StockPrice, "id">): Promise<void> {
     this.store.stock_prices.push({ ...data, id: randomUUID() });
-    this.persist();
   }
 
   async startIngestionRun(): Promise<IngestionRun> {
@@ -252,14 +214,10 @@ export class FileDatabase {
       errors: [],
     };
     this.store.ingestion_runs.push(run);
-    this.persist();
     return run;
   }
 
-  async completeIngestionRun(
-    id: string,
-    data: Partial<IngestionRun>,
-  ): Promise<void> {
+  async completeIngestionRun(id: string, data: Partial<IngestionRun>): Promise<void> {
     const run = this.store.ingestion_runs.find((r) => r.id === id);
     if (run) {
       Object.assign(run, {
@@ -267,23 +225,21 @@ export class FileDatabase {
         completed_at: new Date().toISOString(),
         status: data.status ?? "completed",
       });
-      this.persist();
     }
   }
 
   async setMetadata(key: string, value: string): Promise<void> {
     this.store.metadata[key] = value;
-    this.persist();
   }
 
   async getMetadata(key: string): Promise<string | null> {
     return this.store.metadata[key] ?? null;
   }
+}
 
-  async deactivateStaleJobs(seenAfter: string): Promise<void> {
-    for (const job of this.store.jobs) {
-      if (job.last_seen_at < seenAfter) job.is_active = false;
-    }
-    this.persist();
-  }
+let memoryInstance: MemoryDatabase | null = null;
+
+export function getMemoryDatabase(): MemoryDatabase {
+  if (!memoryInstance) memoryInstance = new MemoryDatabase();
+  return memoryInstance;
 }

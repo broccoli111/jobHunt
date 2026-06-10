@@ -1,5 +1,7 @@
 import { FileDatabase } from "@/lib/db/file-store";
+import { getMemoryDatabase } from "@/lib/db/memory-store";
 import { PostgresDatabase } from "@/lib/db/postgres";
+import { resolveDatabaseUrl } from "@/lib/db/resolve-database-url";
 import type {
   Company,
   CompensationEstimate,
@@ -34,10 +36,13 @@ let dbInstance: Database | null = null;
 export function getDatabase(): Database {
   if (dbInstance) return dbInstance;
 
-  const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+  const connectionString = resolveDatabaseUrl();
 
   if (connectionString) {
     dbInstance = new PostgresDatabase(connectionString);
+  } else if (process.env.VERCEL) {
+    // Vercel serverless: filesystem is ephemeral — use in-memory store
+    dbInstance = getMemoryDatabase();
   } else {
     // Local dev fallback when DATABASE_URL is not configured
     dbInstance = new FileDatabase();
@@ -47,5 +52,5 @@ export function getDatabase(): Database {
 }
 
 export function isUsingFileStore(): boolean {
-  return !process.env.DATABASE_URL && !process.env.POSTGRES_URL;
+  return !resolveDatabaseUrl() && !process.env.VERCEL;
 }

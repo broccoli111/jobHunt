@@ -38,6 +38,7 @@ export function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -47,11 +48,15 @@ export function Dashboard() {
       setError(null);
       try {
         const res = await fetch(`/api/jobs?${buildQuery(filters)}`);
-        if (!res.ok) throw new Error("Failed to load jobs");
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = [data.error, data.hint].filter(Boolean).join(" — ");
+          throw new Error(detail || "Failed to load jobs");
+        }
         if (active) {
           setJobs(data.jobs ?? []);
           setLastRefreshed(data.lastRefreshedAt ?? null);
+          setWarning(data.warning ?? null);
         }
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : "Unknown error");
@@ -92,10 +97,14 @@ export function Dashboard() {
     setError(null);
     try {
       const res = await fetch(`/api/jobs?${buildQuery(filters)}`);
-      if (!res.ok) throw new Error("Failed to load jobs");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = [data.error, data.hint].filter(Boolean).join(" — ");
+        throw new Error(detail || "Failed to load jobs");
+      }
       setJobs(data.jobs ?? []);
       setLastRefreshed(data.lastRefreshedAt ?? null);
+      setWarning(data.warning ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -149,6 +158,12 @@ export function Dashboard() {
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
         <JobFilters filters={filters} companies={companies} onChange={setFilters} />
+
+        {warning && !error && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {warning}
+          </div>
+        )}
 
         {loading && <LoadingState />}
         {!loading && error && <ErrorState message={error} onRetry={reloadJobs} />}

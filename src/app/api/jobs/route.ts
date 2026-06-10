@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase } from "@/lib/db";
+import { getDatabase, isUsingFileStore } from "@/lib/db";
+import { formatDatabaseError } from "@/lib/db/errors";
+import { resolveDatabaseUrl } from "@/lib/db/resolve-database-url";
 import type { JobFilters, RoleFocus, WorkMode } from "@/types";
 
 export async function GET(request: NextRequest) {
@@ -33,16 +35,26 @@ export async function GET(request: NextRequest) {
       sortOrder,
     });
 
+    const usingMemoryOnVercel = process.env.VERCEL && !resolveDatabaseUrl();
+
     return NextResponse.json({
       jobs,
       count: jobs.length,
       lastRefreshedAt: lastRefreshed,
+      storage: usingMemoryOnVercel
+        ? "memory"
+        : resolveDatabaseUrl()
+          ? "postgres"
+          : isUsingFileStore()
+            ? "file"
+            : "memory",
+      warning: usingMemoryOnVercel
+        ? "No DATABASE_URL configured. Data is in-memory only — click Refresh jobs, then add Postgres for persistence."
+        : undefined,
     });
   } catch (error) {
     console.error("GET /api/jobs error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch jobs" },
-      { status: 500 },
-    );
+    const { message, hint } = formatDatabaseError(error);
+    return NextResponse.json({ error: message, hint }, { status: 500 });
   }
 }

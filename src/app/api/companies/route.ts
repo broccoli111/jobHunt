@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/db";
+import { formatDatabaseError } from "@/lib/db/errors";
 
 export async function GET() {
   try {
@@ -8,6 +9,7 @@ export async function GET() {
     return NextResponse.json({ companies });
   } catch (error) {
     console.error("GET /api/companies error:", error);
-    return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 });
+    const { message, hint } = formatDatabaseError(error);
+    return NextResponse.json({ error: message, hint }, { status: 500 });
   }
 }

@@ -14,7 +14,16 @@ export class PostgresDatabase {
   private sql: ReturnType<typeof postgres>;
 
   constructor(connectionString: string) {
-    this.sql = postgres(connectionString, { ssl: connectionString.includes("supabase") ? "require" : undefined });
+    const needsSsl =
+      process.env.NODE_ENV === "production" ||
+      /supabase|neon|vercel|render|railway|amazonaws/i.test(connectionString);
+
+    this.sql = postgres(connectionString, {
+      ssl: needsSsl ? "require" : false,
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
   }
 
   async getCompanies(): Promise<Company[]> {
