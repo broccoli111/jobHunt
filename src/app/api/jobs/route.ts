@@ -6,6 +6,7 @@ import {
   getPostgresSetupHint,
   resolveDatabaseUrl,
 } from "@/lib/db/resolve-database-url";
+import { sanitizeJobForResponse } from "@/lib/normalization/sanitize-job";
 import type { JobFilters, RoleFocus, WorkMode } from "@/types";
 
 export async function GET(request: NextRequest) {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     const db = getDatabase();
     const lastRefreshed = await db.getMetadata("last_refreshed_at");
 
-    const jobs = await db.getJobs({
+    const jobs = (await db.getJobs({
       roleFocus,
       workMode,
       seniority,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       minMatch,
       sortBy,
       sortOrder,
-    });
+    })).map(sanitizeJobForResponse);
 
     const usingMemoryOnVercel = process.env.VERCEL && !resolveDatabaseUrl();
 

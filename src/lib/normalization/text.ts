@@ -29,7 +29,7 @@ export function normalizeLocation(location: string): string {
     .trim();
 }
 
-export function decodeHtmlEntities(text: string): string {
+function decodeHtmlEntitiesOnce(text: string): string {
   return text
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
@@ -42,6 +42,16 @@ export function decodeHtmlEntities(text: string): string {
     .replace(/&apos;/gi, "'");
 }
 
+export function decodeHtmlEntities(text: string): string {
+  let decoded = text;
+  for (let i = 0; i < 3; i += 1) {
+    const next = decodeHtmlEntitiesOnce(decoded);
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+}
+
 /** Strip HTML tags and decode entities; preserve paragraph breaks where possible. */
 export function stripHtml(html: string): string {
   if (!html) return "";
@@ -49,6 +59,7 @@ export function stripHtml(html: string): string {
   let text = decodeHtmlEntities(html);
 
   text = text
+    .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<br\s*\/?>/gi, "\n")
