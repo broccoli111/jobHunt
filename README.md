@@ -15,6 +15,12 @@ A Vercel-deployable web dashboard that finds, normalizes, deduplicates, scores, 
 - **Manual refresh** from the dashboard
 - **Filters**: role focus, work mode, seniority, company, salary visibility, public/private
 
+## Repository
+
+**GitHub:** [github.com/broccoli111/jobHunt](https://github.com/broccoli111/jobHunt)
+
+Vercel should import `broccoli111/jobHunt` directly — no repo rename required.
+
 ## Tech stack
 
 - Next.js 16 (App Router) + TypeScript
