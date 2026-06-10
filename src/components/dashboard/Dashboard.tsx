@@ -6,6 +6,7 @@ import {
   JobFilters,
   type FilterState,
 } from "@/components/dashboard/JobFilters";
+import { JobCardList } from "@/components/dashboard/JobCardList";
 import { JobTable } from "@/components/dashboard/JobTable";
 import { PostgresSetupBanner } from "@/components/dashboard/PostgresSetupBanner";
 import { Button } from "@/components/ui/Button";
@@ -183,7 +184,12 @@ export function Dashboard() {
             <p className="text-sm text-slate-500">
               Showing {jobs.length} job{jobs.length !== 1 ? "s" : ""} sorted by match %
             </p>
-            <JobTable jobs={jobs} onSelect={setSelectedJob} />
+            <div className="md:hidden">
+              <JobCardList jobs={jobs} onSelect={setSelectedJob} />
+            </div>
+            <div className="hidden md:block">
+              <JobTable jobs={jobs} onSelect={setSelectedJob} />
+            </div>
           </>
         )}
       </main>
