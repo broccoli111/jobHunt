@@ -1,5 +1,4 @@
--- jobHunt initial schema
--- Compatible with Supabase, Vercel Postgres, and standard PostgreSQL
+-- jobHunt initial schema for Vercel Postgres (standard PostgreSQL)
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 

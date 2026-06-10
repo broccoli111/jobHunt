@@ -2,7 +2,7 @@
 
 ## jobHunt — Design Systems Job Dashboard
 
-Next.js App Router application deployed on Vercel with PostgreSQL.
+Next.js on **Vercel** with **Vercel Postgres**. No Supabase.
 
 **Repository:** [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt)
 
@@ -11,29 +11,24 @@ Next.js App Router application deployed on Vercel with PostgreSQL.
 | Service | Required | Command | Port |
 |---------|----------|---------|------|
 | Next.js dev server | Yes | `pnpm dev` | 3000 |
-| PostgreSQL | Production | `DATABASE_URL` env var | — |
+| Vercel Postgres | Production | Connect via Vercel Storage → injects `POSTGRES_URL` | — |
 
-Without `DATABASE_URL`, uses `.data/store.json` file fallback for local dev.
+Local dev without `POSTGRES_URL` uses `.data/store.json`.
 
 ## Commands
 
 ```bash
-pnpm install      # Install dependencies
-pnpm dev          # Dev server (localhost:3000)
-pnpm build        # Production build
-pnpm lint         # ESLint
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
 ```
 
-After starting dev server, click **Refresh jobs** or `POST /api/refresh` to ingest data.
-
-## Database
-
-Apply migration: `supabase/migrations/001_initial_schema.sql`
+Production: connect Vercel Postgres, run `db/migrations/001_initial_schema.sql`, redeploy, then `POST /api/refresh`.
 
 ## Cursor Cloud specific instructions
 
-- **First run**: Call `POST /api/refresh` to populate jobs before testing the dashboard.
-- **No DATABASE_URL**: File store at `.data/store.json` is used automatically.
-- **Ingestion**: Fetches from Greenhouse/Lever/Ashby APIs for companies in `src/config/companies.ts`; may take 1–3 minutes.
-- **Cron**: `vercel.json` schedules refresh at `0 12 * * *` UTC (7 AM EST).
-- **Images**: Clearbit logos configured in `next.config.ts` remotePatterns.
+- **Production requires Vercel Postgres** (`POSTGRES_URL` from Storage tab)
+- **Migration:** `db/migrations/001_initial_schema.sql` via Vercel Query tab
+- **No Supabase** in this project
+- **Cron:** `0 12 * * *` UTC in `vercel.json`

@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
             ? "file"
             : "memory",
       warning: usingMemoryOnVercel
-        ? "No Postgres connected. Jobs will not persist across deploys. In Vercel: Storage → Create Postgres → Connect to this project → run the migration SQL → Redeploy → Refresh jobs."
+        ? "No Vercel Postgres connected. Storage → Create Postgres → Connect to this project → run db/migrations/001_initial_schema.sql in Query tab → Redeploy → Refresh jobs."
         : undefined,
     });
   } catch (error) {

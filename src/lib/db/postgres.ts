@@ -16,7 +16,8 @@ export class PostgresDatabase {
   constructor(connectionString: string) {
     const needsSsl =
       process.env.NODE_ENV === "production" ||
-      /supabase|neon|vercel|render|railway|amazonaws/i.test(connectionString);
+      process.env.VERCEL === "1" ||
+      /vercel|neon|render|railway|amazonaws/i.test(connectionString);
 
     this.sql = postgres(connectionString, {
       ssl: needsSsl ? "require" : false,

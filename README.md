@@ -2,93 +2,71 @@
 
 A Vercel-deployable web dashboard that finds, normalizes, deduplicates, scores, and displays relevant product design job opportunities — with a focus on **design systems** and **IC6+ individual contributor** roles.
 
+**Stack:** Next.js + TypeScript + Tailwind + **Vercel Postgres** + Vercel Cron. No Supabase required.
+
 ## Features
 
-- **Weighted match scoring** (0–100%) comparing job responsibilities against a senior design systems leader profile — not simple keyword matching
+- **Weighted match scoring** (0–100%) comparing job responsibilities against a senior design systems leader profile
 - **Multi-source ingestion** from Greenhouse, Lever, Ashby ATS APIs plus Remotive job board
 - **Configurable seed list** of 90+ top technology companies (`src/config/companies.ts`)
-- **Deduplication** across sources with company career page preference
-- **Compensation estimates** from public benchmarks with confidence levels
-- **Stock prices** for public companies via Yahoo Finance
-- **Company logos** via Clearbit Logo API
-- **Daily cron refresh** at 7:00 AM Eastern (12:00 UTC) via Vercel Cron
-- **Manual refresh** from the dashboard
+- **Deduplication**, compensation estimates, stock prices, company logos
+- **Daily cron refresh** at 7:00 AM Eastern via Vercel Cron
 - **Filters**: role focus, work mode, seniority, company, salary visibility, public/private
 
 ## Repository
 
 **GitHub:** [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt)
 
-Vercel should import `broccoli111/job-hunt`.
+## Deploy to Vercel (full setup)
 
-## Tech stack
+### 1. Import project
 
-- Next.js 16 (App Router) + TypeScript
-- Tailwind CSS
-- PostgreSQL (Vercel Postgres, Supabase, or local)
-- Vercel Cron + serverless API routes
+1. [vercel.com/new](https://vercel.com/new) → import `broccoli111/job-hunt`
+2. **Framework Preset:** Next.js
+3. **Root Directory:** leave empty
+4. Deploy once (app works in-memory; yellow banner until Postgres is connected)
 
-## Quick start
+### 2. Add Vercel Postgres
 
-### 1. Install dependencies
+1. Project → **Storage** → **Create Database** → **Postgres**
+2. Name it (e.g. `job-hunt-db`) → **Connect** to this project
+3. Vercel auto-adds `POSTGRES_URL` — the app reads it automatically
 
-```bash
-pnpm install
-```
+### 3. Run database migration
 
-### 2. Configure environment
+1. Storage → your Postgres database → **Query** tab
+2. Copy/paste all of `db/migrations/001_initial_schema.sql` → **Run**
 
-```bash
-cp .env.example .env.local
-```
+### 4. Environment variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Production | PostgreSQL connection string |
-| `CRON_SECRET` | Production | Bearer token for secured refresh |
-| `REFRESH_API_KEY` | Optional | Manual refresh header (`x-refresh-key`) |
-| `FINNHUB_API_KEY` | Optional | Alternative stock price provider |
+| `POSTGRES_URL` | Auto | Injected when Postgres Storage is connected |
+| `CRON_SECRET` | Recommended | Random string; secures `/api/refresh` |
 
-**Without `DATABASE_URL`**, local dev uses `.data/store.json`. On **Vercel**, data is in-memory only until Postgres is connected (you will see a yellow warning banner).
+Set `CRON_SECRET` under **Settings → Environment Variables**.
 
-### Connect Postgres on Vercel (recommended)
+### 5. Redeploy and ingest
 
-1. Open your Vercel project → **Storage** tab → **Create Database** → **Postgres**
-2. Name it (e.g. `job-hunt-db`) and **Connect** it to your project
-3. Vercel auto-adds `POSTGRES_URL` (this app reads it automatically — no need to rename to `DATABASE_URL`)
-4. Run the schema migration on that database:
-   - **Option A:** Vercel Storage → your database → **Query** tab → paste contents of `supabase/migrations/001_initial_schema.sql` → Run
-   - **Option B:** Locally: `psql $POSTGRES_URL -f supabase/migrations/001_initial_schema.sql`
-5. **Redeploy** the project (Deployments → ⋯ → Redeploy)
-6. Open the site → click **Refresh jobs**
+1. **Deployments** → ⋯ → **Redeploy** (uncheck build cache)
+2. Open your site → **Refresh jobs**
 
-Also set `CRON_SECRET` under **Settings → Environment Variables** for daily cron refresh.
+The yellow “in-memory only” warning should disappear once `POSTGRES_URL` is active.
 
-### 3. Run database migrations
-
-Apply `supabase/migrations/001_initial_schema.sql` to your Postgres database:
+## Local development
 
 ```bash
-# Supabase CLI
-supabase db push
-
-# Or psql
-psql $DATABASE_URL -f supabase/migrations/001_initial_schema.sql
-```
-
-### 4. Start dev server
-
-```bash
+pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and click **Refresh jobs** to ingest postings.
+Open [http://localhost:3000](http://localhost:3000).
 
-### 5. Build
+Without `POSTGRES_URL`, local dev uses `.data/store.json` (no Vercel account needed for basic testing). To test against production Postgres locally, run `vercel env pull` and add `POSTGRES_URL` to `.env.local`.
 
 ```bash
 pnpm build
-pnpm start
+pnpm lint
 ```
 
 ## API routes
@@ -101,43 +79,13 @@ pnpm start
 | `/api/companies` | GET | List companies |
 | `/api/stock-prices` | GET | Fetch stock quote |
 
-### Score a job manually
+## Cron schedule
 
-```bash
-curl -X POST http://localhost:3000/api/score-job \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Staff Product Designer, Design Systems","description":"Lead component library governance, accessibility, and cross-functional engineering partnerships..."}'
-```
-
-## Deploy to Vercel
-
-1. Import [github.com/broccoli111/job-hunt](https://github.com/broccoli111/job-hunt) in Vercel
-2. **Framework Preset:** must be **Next.js** (not "Other")
-3. **Root Directory:** leave empty (repo root contains `package.json`)
-4. Add environment variables (`DATABASE_URL`, `CRON_SECRET`)
-5. Connect Vercel Postgres or Supabase
-6. Run migrations on the production database
-7. Deploy — cron runs daily per `vercel.json`
-
-### Fixing `404: NOT_FOUND` on Vercel
-
-If you see `404: NOT_FOUND` with an ID like `iad1::...`, the deployment exists but Vercel isn't serving the app correctly. Check:
-
-1. **Framework Preset** → Project Settings → Build & Deployment → set to **Next.js**, then **Redeploy** (uncheck "Use existing build cache")
-2. **Root Directory** → must be blank unless code lives in a subfolder
-3. **Production branch** → should be `main` with a successful latest deployment
-4. **Build logs** → open the latest deployment; confirm `pnpm build` completes and shows route `/`
-5. **URL** → use the `*.vercel.app` URL from the successful deployment, not an old/deleted preview link
-
-`vercel.json` in this repo sets `framework: nextjs` and `pnpm` build commands explicitly.
+`vercel.json` runs `/api/refresh` daily at 12:00 UTC (7:00 AM EST):
 
 ```json
-{
-  "crons": [{ "path": "/api/refresh", "schedule": "0 12 * * *" }]
-}
+{ "crons": [{ "path": "/api/refresh", "schedule": "0 12 * * *" }] }
 ```
-
-> **Note:** 7:00 AM Eastern = 12:00 UTC (EST). During EDT (daylight saving), jobs run at 8:00 AM Eastern unless you change to `0 11 * * *`.
 
 ## Scoring model
 
@@ -149,50 +97,25 @@ If you see `404: NOT_FOUND` with an ID like `iad1::...`, the deployment exists b
 | Evidence strength | 15% |
 | Negative signals | 10% |
 
-Candidate profile: `src/config/candidate-profile.ts`
-
-## Adding companies
-
-Edit `src/config/companies.ts`:
-
-```ts
-{
-  name: "Example Co",
-  domain: "example.com",
-  ticker: "EXMP",
-  isPublic: true,
-  careersUrl: "https://example.com/careers",
-  ats: { type: "greenhouse", boardToken: "exampleco" },
-}
-```
+Profile: `src/config/candidate-profile.ts`
 
 ## Project structure
 
 ```
-src/
-  app/api/          # API routes
-  components/       # Dashboard UI
-  config/           # Candidate profile + company seed list
-  lib/
-    ingestion/      # ATS adapters + orchestrator
-    scoring/        # Weighted match engine
-    deduplication/  # Fuzzy dedup logic
-    db/             # Postgres + file-store fallback
-    compensation/   # Public comp benchmarks
-    stock/          # Stock price fetcher
-supabase/migrations/
-vercel.json         # Cron schedule
+src/app/api/        # API routes
+src/components/     # Dashboard UI
+src/config/         # Candidate profile + companies
+src/lib/db/         # Vercel Postgres client
+db/migrations/      # SQL schema for Vercel Postgres
+vercel.json         # Cron + build config
 ```
 
 ## Known limitations
 
-- **Workday / SmartRecruiters**: Placeholder adapters — tenant-specific endpoints vary per company
-- **Google, Apple, Microsoft, Amazon**: No public ATS tokens in seed list; add adapters as needed
-- **Compensation data**: Estimated from public benchmarks; not live Levels.fyi API unless configured
-- **Stock prices**: Yahoo Finance unofficial API; may rate-limit in production
-- **Clearbit logos**: May fail for some domains; falls back to initials
-- **Rate limits**: Ingestion batches companies with concurrency limits; full refresh may take several minutes
-- **Legal**: Respects robots.txt/ToS by using official ATS APIs and public feeds only
+- Workday / SmartRecruiters adapters are stubs
+- Compensation data uses public benchmarks, not live APIs
+- Stock prices via Yahoo Finance (may rate-limit)
+- Clearbit logos may fail; falls back to initials
 
 ## License
 
