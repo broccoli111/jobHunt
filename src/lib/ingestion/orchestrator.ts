@@ -14,6 +14,7 @@ import { fetchRemotiveDesignJobs } from "@/lib/ingestion/adapters/remotive";
 import { fetchSmartRecruitersJobs } from "@/lib/ingestion/adapters/smartrecruiters";
 import { fetchWeWorkRemotelyDesignJobs } from "@/lib/ingestion/adapters/weworkremotely";
 import { fetchWorkdayJobs } from "@/lib/ingestion/adapters/workday";
+import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import { extractTextSections } from "@/lib/normalization/text";
 import {
   inferRoleFocus,
@@ -129,7 +130,10 @@ export async function runIngestion(): Promise<IngestionResult> {
     }
   }
 
-  const enrichedPostings = allPostings.map(enrichPostingSalary);
+  const designPostings = allPostings.filter((job) =>
+    isDesignJobTitle(job.title, job.description),
+  );
+  const enrichedPostings = designPostings.map(enrichPostingSalary);
   const { jobs: deduped, duplicatesRemoved } = deduplicateJobs(enrichedPostings);
 
   const processed: ProcessedJob[] = deduped.map((job) => {
@@ -161,7 +165,7 @@ export async function runIngestion(): Promise<IngestionResult> {
   });
 
   return {
-    rawCount: allPostings.length,
+    rawCount: designPostings.length,
     deduplicatedCount: processed.length,
     duplicatesRemoved,
     jobs: processed,

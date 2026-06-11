@@ -1,3 +1,4 @@
+import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import type { CompanyConfig, RawJobPosting } from "@/types";
 
 /**
@@ -31,10 +32,7 @@ export async function fetchSmartRecruitersJobs(
     };
 
     return (data.content ?? [])
-      .filter((job) => {
-        const text = `${job.name} ${job.department?.label ?? ""}`.toLowerCase();
-        return ["design", "ux", "product design"].some((k) => text.includes(k));
-      })
+      .filter((job) => isDesignJobTitle(job.name, job.department?.label ?? ""))
       .map((job) => ({
         externalId: `smartrecruiters-${companyId}-${job.id}`,
         companyName: company.name,

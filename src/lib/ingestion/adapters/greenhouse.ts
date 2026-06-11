@@ -1,4 +1,3 @@
-import { DESIGN_DEPARTMENT_KEYWORDS } from "@/config/companies";
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { CompanyConfig } from "@/types";
@@ -16,9 +15,6 @@ interface GreenhouseJob {
 
 function isDesignRole(job: GreenhouseJob): boolean {
   const deptText = job.departments.map((d) => d.name).join(" ");
-  if (DESIGN_DEPARTMENT_KEYWORDS.some((k) => deptText.toLowerCase().includes(k))) {
-    return true;
-  }
   return isDesignJobTitle(job.title, deptText);
 }
 
