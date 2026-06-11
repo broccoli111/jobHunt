@@ -6,6 +6,7 @@ import {
   getPostgresSetupHint,
   resolveDatabaseUrl,
 } from "@/lib/db/resolve-database-url";
+import { isEngineeringJobTitle } from "@/lib/ingestion/design-filter";
 import { sanitizeJobForResponse } from "@/lib/normalization/sanitize-job";
 import type { JobFilters, RoleFocus, WorkMode } from "@/types";
 
@@ -45,14 +46,18 @@ export async function GET(request: NextRequest) {
       db.getJobs({ sortBy, sortOrder }),
     ]);
 
-    const sanitizedJobs = jobs.map(sanitizeJobForResponse);
+    const withoutEngineerTitles = (list: typeof jobs) =>
+      list.filter((job) => !isEngineeringJobTitle(job.title));
+
+    const designJobs = withoutEngineerTitles(jobs);
+    const sanitizedJobs = designJobs.map(sanitizeJobForResponse);
 
     const usingMemoryOnVercel = process.env.VERCEL && !resolveDatabaseUrl();
 
     return NextResponse.json({
       jobs: sanitizedJobs,
       count: sanitizedJobs.length,
-      totalInDatabase: totalInDatabase.length,
+      totalInDatabase: withoutEngineerTitles(totalInDatabase).length,
       lastRefreshedAt: lastRefreshed,
       storage: usingMemoryOnVercel
         ? "memory"
