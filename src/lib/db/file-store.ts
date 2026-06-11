@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { TECH_COMPANIES } from "@/config/companies";
+import { mergeJobLocations } from "@/lib/deduplication/deduplicator";
 import { getLogoUrl } from "@/lib/logos";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/normalization/text";
 import type {
@@ -185,10 +186,7 @@ export class FileDatabase {
   ): Promise<{ job: Job; created: boolean }> {
     const normalized = normalizeJobTitle(data.normalized_title || data.title);
     const existing = this.store.jobs.find(
-      (j) =>
-        j.company_id === companyId &&
-        j.normalized_title === normalized &&
-        j.location === data.location,
+      (j) => j.company_id === companyId && j.normalized_title === normalized,
     );
 
     const now = new Date().toISOString();
@@ -197,9 +195,21 @@ export class FileDatabase {
       Object.assign(existing, {
         ...data,
         normalized_title: normalized,
+        location: mergeJobLocations(existing.location, data.location),
         last_seen_at: now,
         is_active: true,
       });
+
+      for (const job of this.store.jobs) {
+        if (
+          job.company_id === companyId &&
+          job.normalized_title === normalized &&
+          job.id !== existing.id
+        ) {
+          job.is_active = false;
+        }
+      }
+
       this.persist();
       return { job: existing, created: false };
     }

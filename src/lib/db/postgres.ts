@@ -1,3 +1,5 @@
+import { mergeJobLocations } from "@/lib/deduplication/deduplicator";
+import { normalizeJobTitle } from "@/lib/normalization/text";
 import postgres from "postgres";
 import type {
   Company,
@@ -121,24 +123,30 @@ export class PostgresDatabase {
     companyId: string,
     data: Omit<Job, "id" | "company_id" | "first_seen_at">,
   ): Promise<{ job: Job; created: boolean }> {
+    const normalizedTitle = normalizeJobTitle(data.normalized_title || data.title);
+    const mergedLocation = data.location;
+
     const existing = await this.sql<Job[]>`
       SELECT * FROM jobs
       WHERE company_id = ${companyId}
-        AND normalized_title = ${data.normalized_title}
-        AND location = ${data.location}
+        AND normalized_title = ${normalizedTitle}
+      ORDER BY last_seen_at DESC
       LIMIT 1
     `;
 
     if (existing[0]) {
+      const location = mergeJobLocations(existing[0].location, mergedLocation);
       const updated = await this.sql<Job[]>`
         UPDATE jobs SET
           title = ${data.title},
+          normalized_title = ${normalizedTitle},
           description = ${data.description},
           responsibilities = ${data.responsibilities},
           qualifications = ${data.qualifications},
           salary_min = ${data.salary_min},
           salary_max = ${data.salary_max},
           salary_currency = ${data.salary_currency},
+          location = ${location},
           work_mode = ${data.work_mode},
           seniority = ${data.seniority},
           role_focus = ${data.role_focus as string[]},
@@ -151,6 +159,16 @@ export class PostgresDatabase {
         WHERE id = ${existing[0].id}
         RETURNING *
       `;
+
+      await this.sql`
+        UPDATE jobs
+        SET is_active = false
+        WHERE company_id = ${companyId}
+          AND normalized_title = ${normalizedTitle}
+          AND id != ${existing[0].id}
+          AND is_active = true
+      `;
+
       return { job: updated[0], created: false };
     }
 
@@ -161,10 +179,10 @@ export class PostgresDatabase {
         canonical_url, preferred_source_type, match_percentage, match_explanation,
         created_at_source, last_seen_at, is_active
       ) VALUES (
-        ${companyId}, ${data.title}, ${data.normalized_title}, ${data.description},
+        ${companyId}, ${data.title}, ${normalizedTitle}, ${data.description},
         ${data.responsibilities}, ${data.qualifications},
         ${data.salary_min}, ${data.salary_max}, ${data.salary_currency},
-        ${data.location}, ${data.work_mode}, ${data.seniority},
+        ${mergedLocation}, ${data.work_mode}, ${data.seniority},
         ${data.role_focus as string[]}, ${data.canonical_url}, ${data.preferred_source_type},
         ${data.match_percentage}, ${data.match_explanation},
         ${data.created_at_source}, NOW(), true

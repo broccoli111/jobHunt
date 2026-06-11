@@ -15,7 +15,7 @@ import { fetchSmartRecruitersJobs } from "@/lib/ingestion/adapters/smartrecruite
 import { fetchWeWorkRemotelyDesignJobs } from "@/lib/ingestion/adapters/weworkremotely";
 import { fetchWorkdayJobs } from "@/lib/ingestion/adapters/workday";
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
-import { extractTextSections } from "@/lib/normalization/text";
+import { extractTextSections, normalizeJobTitle } from "@/lib/normalization/text";
 import {
   inferRoleFocus,
   inferSeniority,
@@ -151,7 +151,7 @@ export async function runIngestion(): Promise<IngestionResult> {
 
     return {
       posting: job,
-      normalizedTitle: job.title.toLowerCase().replace(/\s+/g, " ").trim(),
+      normalizedTitle: normalizeJobTitle(job.title),
       workMode,
       seniority,
       roleFocus,
