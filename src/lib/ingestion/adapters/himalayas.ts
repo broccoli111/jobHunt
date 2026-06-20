@@ -1,4 +1,5 @@
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
@@ -67,8 +68,8 @@ export async function fetchHimalayasDesignJobs(): Promise<RawJobPosting[]> {
             url: job.applicationLink ?? `https://himalayas.app/jobs/search?q=${encodeURIComponent(job.title)}`,
             sourceName: "Himalayas",
             sourceType: "job_board",
-            salaryMin: job.minSalary ?? null,
-            salaryMax: job.maxSalary ?? null,
+            salaryMin: normalizeSalaryAmount(job.minSalary),
+            salaryMax: normalizeSalaryAmount(job.maxSalary),
             salaryCurrency: job.currency ?? "USD",
             postedAt: job.pubDate ? new Date(job.pubDate * 1000).toISOString() : null,
             rawPayload: job,

@@ -1,4 +1,5 @@
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
@@ -39,8 +40,12 @@ export async function fetchRemoteOkDesignJobs(): Promise<RawJobPosting[]> {
         return isDesignJobTitle(job.position, context);
       })
       .map((job) => {
-        const salaryMin = job.salary_min && job.salary_min >= 10_000 ? job.salary_min : null;
-        const salaryMax = job.salary_max && job.salary_max >= 10_000 ? job.salary_max : null;
+        const salaryMin = normalizeSalaryAmount(
+          job.salary_min && job.salary_min >= 10_000 ? job.salary_min : null,
+        );
+        const salaryMax = normalizeSalaryAmount(
+          job.salary_max && job.salary_max >= 10_000 ? job.salary_max : null,
+        );
 
         return {
           externalId: `remoteok-${job.id}`,

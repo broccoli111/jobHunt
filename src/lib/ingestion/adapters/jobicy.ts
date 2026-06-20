@@ -1,4 +1,5 @@
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
@@ -55,8 +56,8 @@ export async function fetchJobicyDesignJobs(): Promise<RawJobPosting[]> {
           url: job.url,
           sourceName: "Jobicy",
           sourceType: "job_board",
-          salaryMin: job.annualSalaryMin ?? null,
-          salaryMax: job.annualSalaryMax ?? null,
+          salaryMin: normalizeSalaryAmount(job.annualSalaryMin),
+          salaryMax: normalizeSalaryAmount(job.annualSalaryMax),
           salaryCurrency: job.salaryCurrency ?? "USD",
           postedAt: job.pubDate ?? null,
           rawPayload: job,

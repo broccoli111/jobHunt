@@ -2,6 +2,7 @@ import { TECH_COMPANIES } from "@/config/companies";
 import { estimateCompensation } from "@/lib/compensation/estimator";
 import { getDatabase } from "@/lib/db";
 import { getLogoUrl } from "@/lib/logos";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeCompanyName, normalizeJobText } from "@/lib/normalization/text";
 import type { ProcessedJob } from "@/lib/ingestion/orchestrator";
 import { fetchStockPrices } from "@/lib/stock/fetcher";
@@ -66,8 +67,8 @@ export async function persistIngestionResult(
       description: normalizeJobText(item.posting.description),
       responsibilities: normalizeJobText(item.responsibilities),
       qualifications: normalizeJobText(item.qualifications),
-      salary_min: item.posting.salaryMin ?? null,
-      salary_max: item.posting.salaryMax ?? null,
+      salary_min: normalizeSalaryAmount(item.posting.salaryMin),
+      salary_max: normalizeSalaryAmount(item.posting.salaryMax),
       salary_currency: item.posting.salaryCurrency ?? "USD",
       location: item.posting.location,
       work_mode: item.workMode,

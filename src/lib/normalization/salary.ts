@@ -9,6 +9,24 @@ export interface ExtractedSalary {
 const MIN_SALARY = 40_000;
 const MAX_SALARY = 2_000_000;
 
+/** Coerce API/parsed salary amounts to whole dollars for INTEGER database columns. */
+export function normalizeSalaryAmount(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const rounded = Math.round(value);
+  if (rounded < MIN_SALARY || rounded > MAX_SALARY) return null;
+  return rounded;
+}
+
+function finalizeSalary(extracted: ExtractedSalary): ExtractedSalary {
+  const min = normalizeSalaryAmount(extracted.min);
+  const max = normalizeSalaryAmount(extracted.max);
+  return {
+    min,
+    max: max ?? min,
+    currency: extracted.currency,
+  };
+}
+
 function detectCurrency(text: string): string {
   if (/€|eur\b/i.test(text)) return "EUR";
   if (/£|gbp\b/i.test(text)) return "GBP";
@@ -81,7 +99,7 @@ function extractAdjacentSalaryRange(text: string): ExtractedSalary | null {
 }
 
 function toRange(amounts: number[], currency: string): ExtractedSalary {
-  const unique = [...new Set(amounts)].sort((a, b) => a - b);
+  const unique = [...new Set(amounts.map((amount) => normalizeSalaryAmount(amount)).filter((amount): amount is number => amount != null))].sort((a, b) => a - b);
   if (unique.length === 0) {
     return { min: null, max: null, currency };
   }
@@ -122,8 +140,8 @@ function extractFromGreenhousePayRangesField(raw: unknown): ExtractedSalary | nu
     currency?: string;
   };
 
-  const min = first.min ?? null;
-  const max = first.max ?? null;
+  const min = normalizeSalaryAmount(first.min);
+  const max = normalizeSalaryAmount(first.max ?? first.min);
   if (min == null && max == null) return null;
 
   return {
@@ -172,20 +190,24 @@ export function extractSalaryFromText(text: string): ExtractedSalary {
 
   const normalized = prepareSalaryText(text);
   const fromPayRange = extractFromGreenhousePayRange(normalized);
-  if (fromPayRange?.min != null) return fromPayRange;
+  if (fromPayRange?.min != null) return finalizeSalary(fromPayRange);
 
   const adjacent = extractAdjacentSalaryRange(normalized);
-  if (adjacent?.min != null) return adjacent;
+  if (adjacent?.min != null) return finalizeSalary(adjacent);
 
   const fromContext = extractFromSalaryContext(normalized);
-  if (fromContext?.min != null) return fromContext;
+  if (fromContext?.min != null) return finalizeSalary(fromContext);
 
   const amounts = amountsFromMatches(normalized).filter((amount) => amount >= MIN_SALARY);
   if (amounts.length >= 2) {
-    return toRange(amounts, detectCurrency(normalized));
+    return finalizeSalary(toRange(amounts, detectCurrency(normalized)));
   }
   if (amounts.length === 1) {
-    return { min: amounts[0], max: amounts[0], currency: detectCurrency(normalized) };
+    return finalizeSalary({
+      min: amounts[0],
+      max: amounts[0],
+      currency: detectCurrency(normalized),
+    });
   }
 
   return { min: null, max: null, currency: detectCurrency(normalized) };
@@ -210,7 +232,7 @@ export function extractSalaryFromPosting(
   for (const source of sources) {
     const decoded = decodeHtmlEntities(source);
     const fromPayRange = extractFromGreenhousePayRange(decoded);
-    if (fromPayRange?.min != null) return fromPayRange;
+    if (fromPayRange?.min != null) return finalizeSalary(fromPayRange);
 
     const extracted = extractSalaryFromText(source);
     if (extracted.min != null) return extracted;

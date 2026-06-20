@@ -1,4 +1,5 @@
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
@@ -71,8 +72,8 @@ export async function fetchJSearchDesignJobs(): Promise<RawJobPosting[]> {
           url: job.job_apply_link ?? job.job_google_link ?? "",
           sourceName: "JSearch (Indeed/Google Jobs)",
           sourceType: "job_board",
-          salaryMin: job.job_min_salary ?? null,
-          salaryMax: job.job_max_salary ?? null,
+          salaryMin: normalizeSalaryAmount(job.job_min_salary),
+          salaryMax: normalizeSalaryAmount(job.job_max_salary),
           salaryCurrency: job.job_salary_currency ?? "USD",
           postedAt: job.job_posted_at_datetime_utc ?? null,
           rawPayload: job,

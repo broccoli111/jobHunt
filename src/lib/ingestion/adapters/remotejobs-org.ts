@@ -1,4 +1,5 @@
 import { isDesignJobTitle } from "@/lib/ingestion/design-filter";
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import { normalizeJobText } from "@/lib/normalization/text";
 import type { RawJobPosting } from "@/types";
 
@@ -55,8 +56,8 @@ export async function fetchRemoteJobsOrgDesignJobs(): Promise<RawJobPosting[]> {
           url: job.apply_url ?? job.url,
           sourceName: "RemoteJobs.org",
           sourceType: "job_board",
-          salaryMin: job.salary_min ?? null,
-          salaryMax: job.salary_max ?? null,
+          salaryMin: normalizeSalaryAmount(job.salary_min),
+          salaryMax: normalizeSalaryAmount(job.salary_max),
           salaryCurrency: "USD",
           postedAt: job.posted_at ?? null,
           rawPayload: job,

@@ -1,3 +1,4 @@
+import { normalizeSalaryAmount } from "@/lib/normalization/salary";
 import {
   normalizeCompanyName,
   normalizeJobTitle,
@@ -47,10 +48,17 @@ function mergeSalary(
   b: { min?: number | null; max?: number | null },
 ): { min: number | null; max: number | null } {
   const min =
-    a.min != null && b.min != null ? Math.max(a.min, b.min) : a.min ?? b.min ?? null;
+    a.min != null && b.min != null
+      ? Math.max(a.min, b.min)
+      : a.min ?? b.min ?? null;
   const max =
-    a.max != null && b.max != null ? Math.min(a.max, b.max) : a.max ?? b.max ?? null;
-  return { min, max };
+    a.max != null && b.max != null
+      ? Math.min(a.max, b.max)
+      : a.max ?? b.max ?? null;
+  return {
+    min: min != null ? Math.round(min) : null,
+    max: max != null ? Math.round(max) : null,
+  };
 }
 
 function isLikelyDuplicate(a: RawJobPosting, b: RawJobPosting): boolean {
@@ -170,13 +178,15 @@ function mergeStoredJobGroup(jobs: JobWithCompany[]): JobWithCompany {
   }
 
   const salaryMin = sorted.reduce<number | null>((best, job) => {
-    if (job.salary_min == null) return best;
-    return best == null ? job.salary_min : Math.max(best, job.salary_min);
+    const value = normalizeSalaryAmount(job.salary_min);
+    if (value == null) return best;
+    return best == null ? value : Math.max(best, value);
   }, null);
 
   const salaryMax = sorted.reduce<number | null>((best, job) => {
-    if (job.salary_max == null) return best;
-    return best == null ? job.salary_max : Math.min(best, job.salary_max);
+    const value = normalizeSalaryAmount(job.salary_max);
+    if (value == null) return best;
+    return best == null ? value : Math.min(best, value);
   }, null);
 
   return {
