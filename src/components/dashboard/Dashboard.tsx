@@ -5,6 +5,8 @@ import {
   DEFAULT_FILTERS,
   JobFilters,
   type FilterState,
+  type JobSortBy,
+  type JobSortOrder,
 } from "@/components/dashboard/JobFilters";
 import { JobCardList } from "@/components/dashboard/JobCardList";
 import { JobTable } from "@/components/dashboard/JobTable";
@@ -26,9 +28,16 @@ function buildQuery(filters: FilterState): string {
   if (filters.companyIds.length) params.set("companies", filters.companyIds.join(","));
   if (filters.salaryVisibility !== "all") params.set("salaryVisibility", filters.salaryVisibility);
   if (filters.publicOnly != null) params.set("publicOnly", String(filters.publicOnly));
-  params.set("sortBy", "match_percentage");
-  params.set("sortOrder", "desc");
+  params.set("sortBy", filters.sortBy);
+  params.set("sortOrder", filters.sortOrder);
   return params.toString();
+}
+
+function describeSort(sortBy: JobSortBy, sortOrder: JobSortOrder): string {
+  if (sortBy === "match_percentage") {
+    return sortOrder === "desc" ? "match % (high to low)" : "match % (low to high)";
+  }
+  return sortOrder === "desc" ? "recency (newest first)" : "recency (oldest first)";
 }
 
 export function Dashboard() {
@@ -184,7 +193,8 @@ export function Dashboard() {
         {!loading && !error && jobs.length > 0 && (
           <>
             <p className="text-sm text-slate-500">
-              Showing {jobs.length} job{jobs.length !== 1 ? "s" : ""} sorted by match %
+              Showing {jobs.length} job{jobs.length !== 1 ? "s" : ""} sorted by{" "}
+              {describeSort(filters.sortBy, filters.sortOrder)}
               {totalInDatabase != null && totalInDatabase > jobs.length
                 ? ` (${totalInDatabase} total in database — clear filters to see more)`
                 : ""}

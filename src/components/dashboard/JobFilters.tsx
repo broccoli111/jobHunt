@@ -1,6 +1,8 @@
 "use client";
 
-import type { RoleFocus, WorkMode } from "@/types";
+import type { JobSortBy, JobSortOrder, RoleFocus, WorkMode } from "@/types";
+
+export type { JobSortBy, JobSortOrder };
 
 export interface FilterState {
   roleFocus: RoleFocus[];
@@ -9,6 +11,8 @@ export interface FilterState {
   companyIds: string[];
   salaryVisibility: "has_salary" | "no_salary" | "all";
   publicOnly: boolean | null;
+  sortBy: JobSortBy;
+  sortOrder: JobSortOrder;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -18,6 +22,8 @@ export const DEFAULT_FILTERS: FilterState = {
   companyIds: [],
   salaryVisibility: "all",
   publicOnly: null,
+  sortBy: "match_percentage",
+  sortOrder: "desc",
 };
 
 const ROLE_FOCUS_OPTIONS: { value: RoleFocus; label: string }[] = [
@@ -181,6 +187,54 @@ export function JobFilters({ filters, companies, onChange }: JobFiltersProps) {
               <option value="private">Private only</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-4 border-t border-slate-100 pt-4">
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Sort by
+          </label>
+          <select
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            value={filters.sortBy}
+            onChange={(e) =>
+              onChange({
+                ...filters,
+                sortBy: e.target.value as FilterState["sortBy"],
+              })
+            }
+          >
+            <option value="match_percentage">Match %</option>
+            <option value="last_seen_at">Recency</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Order
+          </label>
+          <select
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            value={filters.sortOrder}
+            onChange={(e) =>
+              onChange({
+                ...filters,
+                sortOrder: e.target.value as FilterState["sortOrder"],
+              })
+            }
+          >
+            {filters.sortBy === "match_percentage" ? (
+              <>
+                <option value="desc">High to low</option>
+                <option value="asc">Low to high</option>
+              </>
+            ) : (
+              <>
+                <option value="desc">Newest first</option>
+                <option value="asc">Oldest first</option>
+              </>
+            )}
+          </select>
         </div>
       </div>
     </div>

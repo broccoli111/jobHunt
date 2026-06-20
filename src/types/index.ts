@@ -143,6 +143,9 @@ export interface JobWithCompany extends Job {
   stock_price?: StockPrice | null;
 }
 
+export type JobSortBy = "match_percentage" | "last_seen_at";
+export type JobSortOrder = "asc" | "desc";
+
 export interface JobFilters {
   roleFocus?: RoleFocus[];
   workMode?: WorkMode[];
@@ -151,8 +154,8 @@ export interface JobFilters {
   salaryVisibility?: "has_salary" | "no_salary" | "all";
   publicOnly?: boolean | null;
   minMatch?: number;
-  sortBy?: "match_percentage" | "last_seen_at" | "company_name";
-  sortOrder?: "asc" | "desc";
+  sortBy?: JobSortBy | "company_name";
+  sortOrder?: JobSortOrder;
 }
 
 export interface ScoreBreakdown {

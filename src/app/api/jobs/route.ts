@@ -9,7 +9,32 @@ import {
 import { deduplicateStoredJobs } from "@/lib/deduplication/deduplicator";
 import { isEngineeringJobTitle } from "@/lib/ingestion/design-filter";
 import { sanitizeJobForResponse } from "@/lib/normalization/sanitize-job";
-import type { JobFilters, RoleFocus, WorkMode } from "@/types";
+import type { JobFilters, JobWithCompany, JobSortBy, JobSortOrder, RoleFocus, WorkMode } from "@/types";
+
+function normalizeSortBy(value: string | null): JobSortBy {
+  return value === "last_seen_at" ? "last_seen_at" : "match_percentage";
+}
+
+function normalizeSortOrder(value: string | null): JobSortOrder {
+  return value === "asc" ? "asc" : "desc";
+}
+
+function sortJobs(
+  jobs: JobWithCompany[],
+  sortBy: JobSortBy,
+  sortOrder: JobSortOrder,
+): JobWithCompany[] {
+  const direction = sortOrder === "asc" ? 1 : -1;
+
+  return [...jobs].sort((a, b) => {
+    const av = sortBy === "last_seen_at" ? a.last_seen_at : Number(a.match_percentage);
+    const bv = sortBy === "last_seen_at" ? b.last_seen_at : Number(b.match_percentage);
+
+    if (av < bv) return -direction;
+    if (av > bv) return direction;
+    return 0;
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,8 +49,8 @@ export async function GET(request: NextRequest) {
     const publicOnly =
       publicOnlyParam === "true" ? true : publicOnlyParam === "false" ? false : null;
     const minMatch = searchParams.get("minMatch") ? Number(searchParams.get("minMatch")) : undefined;
-    const sortBy = (searchParams.get("sortBy") as JobFilters["sortBy"]) ?? "match_percentage";
-    const sortOrder = (searchParams.get("sortOrder") as JobFilters["sortOrder"]) ?? "desc";
+    const sortBy = normalizeSortBy(searchParams.get("sortBy"));
+    const sortOrder = normalizeSortOrder(searchParams.get("sortOrder"));
 
     const db = getDatabase();
     const lastRefreshed = await db.getMetadata("last_refreshed_at");
@@ -50,7 +75,11 @@ export async function GET(request: NextRequest) {
     const withoutEngineerTitles = (list: typeof jobs) =>
       list.filter((job) => !isEngineeringJobTitle(job.title));
 
-    const designJobs = withoutEngineerTitles(deduplicateStoredJobs(jobs));
+    const designJobs = sortJobs(
+      withoutEngineerTitles(deduplicateStoredJobs(jobs)),
+      sortBy,
+      sortOrder,
+    );
     const sanitizedJobs = designJobs.map(sanitizeJobForResponse);
 
     const usingMemoryOnVercel = process.env.VERCEL && !resolveDatabaseUrl();
